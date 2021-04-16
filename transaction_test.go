@@ -15,7 +15,7 @@ import (
 )
 
 var fixtures string = filepath.Join("test", "fixtures")
-var mapper ColumnMapper = ColumnMapper{
+var mapper map[string]int = map[string]int{
 	"date":        0,
 	"description": 1,
 	"credit":      4,
@@ -25,7 +25,8 @@ var mapper ColumnMapper = ColumnMapper{
 
 func TestEmptyTransactionFromEmptyCSV(t *testing.T) {
 	r := strings.NewReader("")
-	transactions := TransactionsFromCSV(r, mapper)
+	hunk := NewCSVHunk(r, mapper, []int{})
+	transactions, _ := hunk.TransactionsFromCSV()
 	if l := len(transactions); l > 0 {
 		t.Errorf("expected 0 transactions got %d", l)
 	}
@@ -34,7 +35,9 @@ func TestEmptyTransactionFromEmptyCSV(t *testing.T) {
 func TestBadDate(t *testing.T) {
 	r := openFixture(t, "bad-date.csv")
 	defer r.Close()
-	transactions := TransactionsFromCSV(r, mapper)
+	hunk := NewCSVHunk(r, mapper, []int{})
+	transactions, err := hunk.TransactionsFromCSV()
+	check(t, err)
 	if l := len(transactions); l != 1 {
 		t.Fatalf("expected 1 transactions got %d", l)
 	}
@@ -52,7 +55,9 @@ func TestBadDate(t *testing.T) {
 func TestSingleTransactionFromSingleRowCSV(t *testing.T) {
 	r := openFixture(t, "single-row.csv")
 	defer r.Close()
-	transactions := TransactionsFromCSV(r, mapper)
+	hunk := NewCSVHunk(r, mapper, []int{})
+	transactions, err := hunk.TransactionsFromCSV()
+	check(t, err)
 	if l := len(transactions); l != 1 {
 		t.Fatalf("expected 1 transactions got %d", l)
 	}
@@ -69,8 +74,10 @@ func TestSingleTransactionFromSingleRowCSV(t *testing.T) {
 func TestMapsColumnsByGivenIndices(t *testing.T) {
 	r := openFixture(t, "single-row.csv")
 	defer r.Close()
-	customMapper := ColumnMapper{"date": 7}
-	transactions := TransactionsFromCSV(r, customMapper)
+	customMapper := map[string]int{"date": 7}
+	hunk := NewCSVHunk(r, customMapper, []int{})
+	transactions, err := hunk.TransactionsFromCSV()
+	check(t, err)
 	if l := len(transactions); l != 1 {
 		t.Fatalf("expected 1 transactions got %d", l)
 	}
@@ -80,10 +87,73 @@ func TestMapsColumnsByGivenIndices(t *testing.T) {
 	}
 }
 
+func TestIgnoresBadMapper(t *testing.T) {
+	r := openFixture(t, "single-row.csv")
+	defer r.Close()
+	customMapper := map[string]int{"date": 9, "not_exist": 23, "credit": 2}
+	hunk := NewCSVHunk(r, customMapper, []int{})
+	transactions, err := hunk.TransactionsFromCSV()
+	expectError(t, err)
+	if l := len(transactions); l != 0 {
+		t.Errorf("expected 0 transactions got %d", l)
+	}
+}
+
+func TestSubsetsRowsExceedsRange(t *testing.T) {
+	r := openFixture(t, "multiple-rows.csv")
+	defer r.Close()
+	subsetter := []int{2, 5}
+	hunk := NewCSVHunk(r, mapper, subsetter)
+	transactions, err := hunk.TransactionsFromCSV()
+	expectError(t, err)
+	if l := len(transactions); l != 0 {
+		t.Errorf("expected %d transactions got %d", 0, l)
+	}
+}
+
+func TestSubsetsRowsUnordered(t *testing.T) {
+	r := openFixture(t, "multiple-rows.csv")
+	defer r.Close()
+	subsetter := []int{2, -1}
+	hunk := NewCSVHunk(r, mapper, subsetter)
+	transactions, err := hunk.TransactionsFromCSV()
+	if err == nil {
+		t.Errorf("expected to throw error, received nil")
+	}
+	if l := len(transactions); l != 0 {
+		t.Errorf("expected %d transactions got %d", 0, l)
+	}
+}
+
+func TestSubsetsRowsByGivenRanges(t *testing.T) {
+	r := openFixture(t, "multiple-rows.csv")
+	defer r.Close()
+	subsetter := []int{2, 3}
+	hunk := NewCSVHunk(r, mapper, subsetter)
+	transactions, err := hunk.TransactionsFromCSV()
+	check(t, err)
+	if l := len(transactions); l != len(subsetter) {
+		t.Errorf("expected %d transactions got %d", len(subsetter), l)
+	}
+	for i := 0; i < len(subsetter); i++ {
+		description := fmt.Sprintf("pizza%d", subsetter[0]+i)
+		expected := &Transaction{
+			Date:        UTCDate(t, 2021, 03, 18),
+			Description: description,
+			Credit:      5.0,
+			Refund:      0.0,
+			Balance:     150.0,
+		}
+		checkEquals(t, &transactions[i], expected)
+	}
+}
+
 func TestTransactionsFromCSV(t *testing.T) {
 	r := openFixture(t, "multiple-rows.csv")
 	defer r.Close()
-	transactions := TransactionsFromCSV(r, mapper)
+	hunk := NewCSVHunk(r, mapper, []int{})
+	transactions, err := hunk.TransactionsFromCSV()
+	check(t, err)
 	if l := len(transactions); l != 4 {
 		t.Errorf("expected 4 transactions got %d", l)
 	}
@@ -120,5 +190,17 @@ func UTCDate(t *testing.T, year int, month time.Month, day int) time.Time {
 func checkEquals(t *testing.T, actual *Transaction, expected *Transaction) {
 	if *actual != *expected {
 		t.Errorf("expected %v, received %v", expected, actual)
+	}
+}
+
+func expectError(t *testing.T, err error) {
+	if err == nil {
+		t.Errorf("expected to throw error, received nil")
+	}
+}
+
+func check(t *testing.T, err error) {
+	if err != nil {
+		t.Errorf("unexpected error %s while running test %s", err, t.Name())
 	}
 }

@@ -10,6 +10,7 @@ import (
 	"fmt"
 	"io"
 	"log"
+	"math"
 	"strconv"
 	"time"
 
@@ -27,14 +28,12 @@ type Transaction struct {
 type CSVHunk struct {
 	df           dataframe.DataFrame
 	columnMapper map[string]int
-	rowSubsetter []int
 }
 
-func NewCSVHunk(r io.Reader, columnMapper map[string]int, rowSubsetter []int) *CSVHunk {
+func NewCSVHunk(r io.Reader, columnMapper map[string]int) *CSVHunk {
 	return &CSVHunk{
 		dataframe.ReadCSV(r),
 		columnMapper,
-		rowSubsetter,
 	}
 }
 
@@ -43,9 +42,12 @@ func (t *CSVHunk) Transactions() ([]Transaction, error) {
 	if err != nil {
 		return []Transaction{}, err
 	}
-	transactions := make([]Transaction, len(records))
-	for i, dfr := range records {
-		transactions[i] = *transaction(dfr, t.columnMapper)
+	transactions := make([]Transaction, 0, len(records))
+	for _, dfr := range records {
+		trans, err := transaction(dfr, t.columnMapper)
+		if err == nil {
+			transactions = append(transactions, *trans)
+		}
 	}
 	return transactions, nil
 }
@@ -58,30 +60,14 @@ func (t *CSVHunk) records() ([][]string, error) {
 	if err := t.checkDims(); err != nil {
 		return [][]string{}, err
 	}
-	if len(t.rowSubsetter) > 0 {
-		t.df = t.df.Subset(t.rowSubsetter)
-	}
 
 	return t.df.Records()[1:], t.df.Err
 }
 
 func (t *CSVHunk) checkDims() error {
-	rows, cols := t.df.Dims()
+	_, cols := t.df.Dims()
 	if err := validateColumnMapper(t, cols); err != nil {
 		return err
-	}
-	if err := validateRowSubsetter(t, rows); err != nil {
-		return err
-	}
-	return nil
-}
-
-func validateRowSubsetter(t *CSVHunk, rows int) error {
-	min, max := minMax(t.rowSubsetter)
-	if min < 0 || max >= rows {
-		err := fmt.Sprintf("invalid row subsetter. indices out of range: rows=%d, min=%d, max=%d", rows, min, max)
-		log.Print(err)
-		return errors.New(err)
 	}
 	return nil
 }
@@ -101,45 +87,41 @@ func validateColumnMapper(t *CSVHunk, cols int) error {
 	return nil
 }
 
-func minMax(s []int) (int, int) {
-	if len(s) == 0 {
-		return 0, 0
+func transaction(record []string, m map[string]int) (*Transaction, error) {
+	time, err := parseTime(record[m["date"]])
+	if err != nil {
+		return &Transaction{}, err
 	}
-	currentMax := 0
-	currentMin := s[0]
-	for _, e := range s {
-		if e > currentMax {
-			currentMax = e
-		}
-		if e < currentMin {
-			currentMin = e
-		}
+	balance, err := parseFloat(record[m["balance"]])
+	if !validFloat(balance, err) {
+		return &Transaction{}, errors.New("must have valid balance")
 	}
-	return currentMin, currentMax
-}
-
-func transaction(record []string, m map[string]int) *Transaction {
-	time := parseTime(record[m["date"]])
+	credit, err := parseFloat(record[m["credit"]])
+	refund, err2 := parseFloat(record[m["refund"]])
+	if !validFloat(credit, err) && !validFloat(refund, err2) {
+		return &Transaction{}, errors.New("must have valid credit or refund")
+	}
 	description := record[m["description"]]
-	credit := parseFloat(record[m["credit"]])
-	refund := parseFloat(record[m["refund"]])
-	balance := parseFloat(record[m["balance"]])
-	return &Transaction{time, description, credit, refund, balance}
+	return &Transaction{time, description, credit, refund, balance}, nil
 }
 
-func parseTime(timeStr string) time.Time {
+func parseTime(timeStr string) (time.Time, error) {
 	layout := "02.01.2006"
 	t, err := time.Parse(layout, timeStr)
 	if err != nil {
 		log.Printf("couldn't parse time: %s", err)
 	}
-	return t
+	return t, err
 }
 
-func parseFloat(num string) float64 {
+func parseFloat(num string) (float64, error) {
 	parsed, err := strconv.ParseFloat(num, 64)
 	if err != nil {
 		log.Printf("error when parsing float: %s", err)
 	}
-	return parsed
+	return parsed, err
+}
+
+func validFloat(n float64, err error) bool {
+	return err == nil && !math.IsNaN(n)
 }

@@ -42,7 +42,7 @@ func ExpectError(t *testing.T, err error) {
 	}
 }
 
-func Check(t *testing.T, err error) {
+func FailTestIfErr(t *testing.T, err error) {
 	if err != nil {
 		t.Errorf("unexpected error %s while running test %s", err, t.Name())
 	}

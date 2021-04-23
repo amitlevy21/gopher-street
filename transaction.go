@@ -25,19 +25,19 @@ type Transaction struct {
 	Balance     float64
 }
 
-type CSVHunk struct {
+type CardTransactions struct {
 	df           dataframe.DataFrame
 	columnMapper map[string]int
 }
 
-func NewCSVHunk(r io.Reader, columnMapper map[string]int) *CSVHunk {
-	return &CSVHunk{
+func NewCardTransactions(r io.Reader, columnMapper map[string]int) *CardTransactions {
+	return &CardTransactions{
 		dataframe.ReadCSV(r),
 		columnMapper,
 	}
 }
 
-func (t *CSVHunk) Transactions() ([]Transaction, error) {
+func (t *CardTransactions) Transactions() ([]Transaction, error) {
 	records, err := t.records()
 	if err != nil {
 		return []Transaction{}, err
@@ -52,7 +52,7 @@ func (t *CSVHunk) Transactions() ([]Transaction, error) {
 	return transactions, nil
 }
 
-func (t *CSVHunk) records() ([][]string, error) {
+func (t *CardTransactions) records() ([][]string, error) {
 	if t.df.Err != nil {
 		log.Printf("error while reading CSV: %s", t.df.Err)
 		return [][]string{}, t.df.Err
@@ -64,7 +64,7 @@ func (t *CSVHunk) records() ([][]string, error) {
 	return t.df.Records()[1:], t.df.Err
 }
 
-func (t *CSVHunk) checkDims() error {
+func (t *CardTransactions) checkDims() error {
 	_, cols := t.df.Dims()
 	if err := validateColumnMapper(t, cols); err != nil {
 		return err
@@ -72,7 +72,7 @@ func (t *CSVHunk) checkDims() error {
 	return nil
 }
 
-func validateColumnMapper(t *CSVHunk, cols int) error {
+func validateColumnMapper(t *CardTransactions, cols int) error {
 	invalid := make(map[string]int)
 	for k, v := range t.columnMapper {
 		if v < 0 || v >= cols {

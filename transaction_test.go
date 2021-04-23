@@ -23,7 +23,7 @@ var mapper map[string]int = map[string]int{
 
 func TestEmptyTransactionFromEmptyCSV(t *testing.T) {
 	r := strings.NewReader("")
-	hunk := NewCSVHunk(r, mapper)
+	hunk := NewCardTransactions(r, mapper)
 	transactions, _ := hunk.Transactions()
 	if l := len(transactions); l > 0 {
 		t.Errorf("expected 0 transactions got %d", l)
@@ -33,7 +33,7 @@ func TestEmptyTransactionFromEmptyCSV(t *testing.T) {
 func TestSkipsBadDateRecord(t *testing.T) {
 	r := helpers.OpenFixture(t, "bad-date.csv")
 	defer r.Close()
-	hunk := NewCSVHunk(r, mapper)
+	hunk := NewCardTransactions(r, mapper)
 	transactions, err := hunk.Transactions()
 	helpers.Check(t, err)
 	if l := len(transactions); l != 0 {
@@ -44,7 +44,7 @@ func TestSkipsBadDateRecord(t *testing.T) {
 func TestSkipsBadRecords(t *testing.T) {
 	r := helpers.OpenFixture(t, "bad-multi.csv")
 	defer r.Close()
-	hunk := NewCSVHunk(r, mapper)
+	hunk := NewCardTransactions(r, mapper)
 	transactions, err := hunk.Transactions()
 	helpers.Check(t, err)
 	if l := len(transactions); l != 1 {
@@ -62,7 +62,7 @@ func TestSkipsBadRecords(t *testing.T) {
 func TestSingleTransactionFromSingleRowCSV(t *testing.T) {
 	r := helpers.OpenFixture(t, "single-row.csv")
 	defer r.Close()
-	hunk := NewCSVHunk(r, mapper)
+	hunk := NewCardTransactions(r, mapper)
 	transactions, err := hunk.Transactions()
 	helpers.Check(t, err)
 	if l := len(transactions); l != 1 {
@@ -88,7 +88,7 @@ func TestMapsColumnsByGivenIndices(t *testing.T) {
 		"refund":      5,
 		"balance":     6,
 	}
-	hunk := NewCSVHunk(r, customMapper)
+	hunk := NewCardTransactions(r, customMapper)
 	transactions, err := hunk.Transactions()
 	helpers.Check(t, err)
 	if l := len(transactions); l != 1 {
@@ -104,7 +104,7 @@ func TestIgnoresBadMapper(t *testing.T) {
 	r := helpers.OpenFixture(t, "single-row.csv")
 	defer r.Close()
 	customMapper := map[string]int{"date": 9, "not_exist": 23, "credit": 2}
-	hunk := NewCSVHunk(r, customMapper)
+	hunk := NewCardTransactions(r, customMapper)
 	transactions, err := hunk.Transactions()
 	helpers.ExpectError(t, err)
 	if l := len(transactions); l != 0 {
@@ -115,7 +115,7 @@ func TestIgnoresBadMapper(t *testing.T) {
 func TestTransactionsFromCSV(t *testing.T) {
 	r := helpers.OpenFixture(t, "multiple-rows.csv")
 	defer r.Close()
-	hunk := NewCSVHunk(r, mapper)
+	hunk := NewCardTransactions(r, mapper)
 	transactions, err := hunk.Transactions()
 	helpers.Check(t, err)
 	if l := len(transactions); l != 4 {

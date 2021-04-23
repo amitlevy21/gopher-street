@@ -20,10 +20,11 @@ var mapper map[string]int = map[string]int{
 	"refund":      5,
 	"balance":     6,
 }
+var emptySubsetter []int = []int{}
 
 func TestEmptyTransactionFromEmptyCSV(t *testing.T) {
 	r := strings.NewReader("")
-	hunk := NewCardTransactions(r, mapper)
+	hunk := NewCardTransactions(r, mapper, emptySubsetter)
 	transactions, _ := hunk.Transactions()
 	if l := len(transactions); l > 0 {
 		t.Errorf("expected 0 transactions got %d", l)
@@ -33,9 +34,9 @@ func TestEmptyTransactionFromEmptyCSV(t *testing.T) {
 func TestSkipsBadDateRecord(t *testing.T) {
 	r := helpers.OpenFixture(t, "bad-date.csv")
 	defer r.Close()
-	hunk := NewCardTransactions(r, mapper)
+	hunk := NewCardTransactions(r, mapper, emptySubsetter)
 	transactions, err := hunk.Transactions()
-	helpers.Check(t, err)
+	helpers.FailTestIfErr(t, err)
 	if l := len(transactions); l != 0 {
 		t.Errorf("expected 0 transactions got %d", l)
 	}
@@ -44,9 +45,9 @@ func TestSkipsBadDateRecord(t *testing.T) {
 func TestSkipsBadRecords(t *testing.T) {
 	r := helpers.OpenFixture(t, "bad-multi.csv")
 	defer r.Close()
-	hunk := NewCardTransactions(r, mapper)
+	hunk := NewCardTransactions(r, mapper, emptySubsetter)
 	transactions, err := hunk.Transactions()
-	helpers.Check(t, err)
+	helpers.FailTestIfErr(t, err)
 	if l := len(transactions); l != 1 {
 		t.Fatalf("expected 1 transactions got %d", l)
 	}
@@ -62,9 +63,9 @@ func TestSkipsBadRecords(t *testing.T) {
 func TestSingleTransactionFromSingleRowCSV(t *testing.T) {
 	r := helpers.OpenFixture(t, "single-row.csv")
 	defer r.Close()
-	hunk := NewCardTransactions(r, mapper)
+	hunk := NewCardTransactions(r, mapper, emptySubsetter)
 	transactions, err := hunk.Transactions()
-	helpers.Check(t, err)
+	helpers.FailTestIfErr(t, err)
 	if l := len(transactions); l != 1 {
 		t.Fatalf("expected 1 transactions got %d", l)
 	}
@@ -88,9 +89,9 @@ func TestMapsColumnsByGivenIndices(t *testing.T) {
 		"refund":      5,
 		"balance":     6,
 	}
-	hunk := NewCardTransactions(r, customMapper)
+	hunk := NewCardTransactions(r, customMapper, emptySubsetter)
 	transactions, err := hunk.Transactions()
-	helpers.Check(t, err)
+	helpers.FailTestIfErr(t, err)
 	if l := len(transactions); l != 1 {
 		t.Fatalf("expected 1 transactions got %d", l)
 	}
@@ -100,24 +101,93 @@ func TestMapsColumnsByGivenIndices(t *testing.T) {
 	}
 }
 
-func TestIgnoresBadMapper(t *testing.T) {
+func TestBadMapper(t *testing.T) {
 	r := helpers.OpenFixture(t, "single-row.csv")
 	defer r.Close()
 	customMapper := map[string]int{"date": 9, "not_exist": 23, "credit": 2}
-	hunk := NewCardTransactions(r, customMapper)
-	transactions, err := hunk.Transactions()
+	hunk := NewCardTransactions(r, customMapper, emptySubsetter)
+	_, err := hunk.Transactions()
 	helpers.ExpectError(t, err)
-	if l := len(transactions); l != 0 {
-		t.Errorf("expected 0 transactions got %d", l)
+}
+
+func TestEmptySubsetterShouldReadAll(t *testing.T) {
+	r := helpers.OpenFixture(t, "multiple-rows.csv")
+	defer r.Close()
+	hunk := NewCardTransactions(r, mapper, emptySubsetter)
+	transactions, err := hunk.Transactions()
+	helpers.FailTestIfErr(t, err)
+	if l := len(transactions); l != 4 {
+		t.Errorf("expected 4 transactions got %d", l)
+	}
+}
+
+func TestOutOfUpperRangeSubsetter(t *testing.T) {
+	r := helpers.OpenFixture(t, "multiple-rows.csv")
+	defer r.Close()
+	subsetter := []int{1, 4}
+	hunk := NewCardTransactions(r, mapper, subsetter)
+	_, err := hunk.Transactions()
+	helpers.ExpectError(t, err)
+}
+
+func TestOutOfLowerRangeSubsetter(t *testing.T) {
+	r := helpers.OpenFixture(t, "single-row.csv")
+	defer r.Close()
+	subsetter := []int{-1, 2}
+	hunk := NewCardTransactions(r, mapper, subsetter)
+	_, err := hunk.Transactions()
+	helpers.ExpectError(t, err)
+}
+
+func TestUnorderedSubsetter(t *testing.T) {
+	r := helpers.OpenFixture(t, "multiple-rows.csv")
+	defer r.Close()
+	subsetter := []int{3, 1}
+	hunk := NewCardTransactions(r, mapper, subsetter)
+	transactions, err := hunk.Transactions()
+	helpers.FailTestIfErr(t, err)
+	for i, rowIndex := range subsetter {
+		description := fmt.Sprintf("pizza%d", rowIndex)
+		expected := &Transaction{
+			Date:        helpers.UTCDate(t, 2021, 03, 18),
+			Description: description,
+			Credit:      5.0,
+			Refund:      0.0,
+			Balance:     150.0,
+		}
+		helpers.CheckEquals(t, &transactions[i], expected)
+	}
+}
+
+func TestSubsetsRowsByGivenIndices(t *testing.T) {
+	r := helpers.OpenFixture(t, "multiple-rows.csv")
+	defer r.Close()
+	subsetter := []int{1, 3}
+	hunk := NewCardTransactions(r, mapper, subsetter)
+	transactions, err := hunk.Transactions()
+	helpers.FailTestIfErr(t, err)
+	if len(transactions) != len(subsetter) {
+		t.Errorf("expected %d but got %d", len(subsetter), len(transactions))
+	}
+	for i, rowIndex := range subsetter {
+		description := fmt.Sprintf("pizza%d", rowIndex)
+		expected := &Transaction{
+			Date:        helpers.UTCDate(t, 2021, 03, 18),
+			Description: description,
+			Credit:      5.0,
+			Refund:      0.0,
+			Balance:     150.0,
+		}
+		helpers.CheckEquals(t, &transactions[i], expected)
 	}
 }
 
 func TestTransactionsFromCSV(t *testing.T) {
 	r := helpers.OpenFixture(t, "multiple-rows.csv")
 	defer r.Close()
-	hunk := NewCardTransactions(r, mapper)
+	hunk := NewCardTransactions(r, mapper, emptySubsetter)
 	transactions, err := hunk.Transactions()
-	helpers.Check(t, err)
+	helpers.FailTestIfErr(t, err)
 	if l := len(transactions); l != 4 {
 		t.Errorf("expected 4 transactions got %d", l)
 	}

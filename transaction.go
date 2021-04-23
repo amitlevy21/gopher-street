@@ -28,12 +28,14 @@ type Transaction struct {
 type CardTransactions struct {
 	df           dataframe.DataFrame
 	columnMapper map[string]int
+	rowSubsetter []int
 }
 
-func NewCardTransactions(r io.Reader, columnMapper map[string]int) *CardTransactions {
+func NewCardTransactions(r io.Reader, columnMapper map[string]int, rowSubsetter []int) *CardTransactions {
 	return &CardTransactions{
 		dataframe.ReadCSV(r),
 		columnMapper,
+		rowSubsetter,
 	}
 }
 
@@ -43,8 +45,8 @@ func (t *CardTransactions) Transactions() ([]Transaction, error) {
 		return []Transaction{}, err
 	}
 	transactions := make([]Transaction, 0, len(records))
-	for _, dfr := range records {
-		trans, err := transaction(dfr, t.columnMapper)
+	for _, record := range records {
+		trans, err := transaction(record, t.columnMapper)
 		if err == nil {
 			transactions = append(transactions, *trans)
 		}
@@ -60,19 +62,51 @@ func (t *CardTransactions) records() ([][]string, error) {
 	if err := t.checkDims(); err != nil {
 		return [][]string{}, err
 	}
+	if len(t.rowSubsetter) == 0 {
+		return t.df.Records()[1:], nil
+	}
+	d := t.df.Subset(t.rowSubsetter)
 
-	return t.df.Records()[1:], t.df.Err
+	return d.Records()[1:], t.df.Err
 }
 
 func (t *CardTransactions) checkDims() error {
-	_, cols := t.df.Dims()
-	if err := validateColumnMapper(t, cols); err != nil {
+	rows, cols := t.df.Dims()
+	if err := t.validateRowSubsetter(rows); err != nil {
+		return err
+	}
+	if err := t.validateColumnMapper(cols); err != nil {
 		return err
 	}
 	return nil
 }
 
-func validateColumnMapper(t *CardTransactions, cols int) error {
+func (t *CardTransactions) validateRowSubsetter(rows int) error {
+	min, max := minMax(t.rowSubsetter)
+	if min < 0 || max > rows-1 {
+		return errors.New("RowSubsetter indices out of range")
+	}
+	return nil
+}
+
+func minMax(s []int) (min int, max int) {
+	if len(s) == 0 {
+		return 0, 0
+	}
+	min = s[0]
+	max = s[0]
+	for _, e := range s[1:] {
+		if e > max {
+			max = e
+		}
+		if e < min {
+			min = e
+		}
+	}
+	return min, max
+}
+
+func (t *CardTransactions) validateColumnMapper(cols int) error {
 	invalid := make(map[string]int)
 	for k, v := range t.columnMapper {
 		if v < 0 || v >= cols {

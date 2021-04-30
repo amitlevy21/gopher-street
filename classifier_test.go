@@ -6,9 +6,6 @@
 package main
 
 import (
-	"io/ioutil"
-	"path/filepath"
-	"reflect"
 	"testing"
 
 	helpers "github.com/amitlevy21/gopher-street/test"
@@ -58,12 +55,7 @@ func TestNewClassifierBadFile(t *testing.T) {
 }
 
 func TestNewClassifier(t *testing.T) {
-	yaml, err := ioutil.ReadFile(filepath.Join("test", "fixtures", "classifier.yml"))
-	helpers.FailTestIfErr(t, err)
-	c, err := NewClassifier(yaml)
-	helpers.FailTestIfErr(t, err)
+	c := NewTestClassifier(t)
 	expected := map[string]string{"hello": "world", "^h.*o$": "world", "hi": "test"}
-	if !reflect.DeepEqual(c.classes, expected) {
-		t.Errorf("expected classes %v got %v", expected, c.classes)
-	}
+	helpers.CheckEquals(t, c.classes, expected)
 }

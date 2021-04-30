@@ -16,7 +16,6 @@ type Tag string
 const (
 	Recurring Tag = "Recurring"
 	Crucial   Tag = "Crucial"
-	None      Tag = ""
 )
 
 type Tagger struct {
@@ -29,20 +28,21 @@ func NewTagger(yamlParseable []byte) (*Tagger, error) {
 		return &Tagger{}, err
 	}
 
-	tags := make(map[string]Tag)
-	for _, v := range tagsToDesc {
-		for tag, descriptions := range v.(map[interface{}]interface{}) {
-			tagName := tag.(string)
-			for _, desc := range descriptions.([]interface{}) {
-				description := desc.(string)
-				tags[description] = Tag(tagName)
+	classesToTags := make(map[string][]Tag)
+	for _, v := range tagsToClasses {
+		for class, tgs := range v.(map[interface{}]interface{}) {
+			className := class.(string)
+			ts := make([]Tag, len(tgs.([]interface{})))
+			for i, tg := range tgs.([]interface{}) {
+				ts[i] = Tag(tg.(string))
 			}
+			classesToTags[className] = ts
 		}
 	}
-	return &Tagger{tags}, nil
+	return &Tagger{classesToTags}, nil
 }
 
-func (t *Tagger) Tag(description string) Tag {
+func (t *Tagger) Tags(class string) []Tag {
 	if tags, ok := t.classesToTags[class]; ok {
 		return tags
 	}
@@ -51,5 +51,5 @@ func (t *Tagger) Tag(description string) Tag {
 			return tag
 		}
 	}
-	return None
+	return []Tag{}
 }

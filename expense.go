@@ -14,17 +14,6 @@ type Expense struct {
 	Tags   []Tag
 }
 
-type Tag int
-
-const (
-	Recurring Tag = iota
-	Crucial
-)
-
-func (t Tag) String() string {
-	return [...]string{"Recurring", "Crucial"}[t]
-}
-
 func NewExpense(transactions []*Transaction, classifier *Classifier) []Expense {
 	expenses := make([]Expense, 0)
 	for _, tr := range transactions {

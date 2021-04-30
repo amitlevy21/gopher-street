@@ -8,7 +8,7 @@ package main
 import "time"
 
 type Expense struct {
-	Date   time.Time
+	Date   time.Month
 	Amount float64
 	Class  string
 	Tags   []Tag
@@ -23,4 +23,18 @@ const (
 
 func (t Tag) String() string {
 	return [...]string{"Recurring", "Crucial"}[t]
+}
+
+func NewExpense(transactions []*Transaction, classifier *Classifier) []Expense {
+	expenses := make([]Expense, 0)
+	for _, tr := range transactions {
+		expense := Expense{
+			Date:   tr.Date.Month(),
+			Amount: tr.Credit,
+			Class:  classifier.Class(tr.Description),
+			Tags:   []Tag{},
+		}
+		expenses = append(expenses, expense)
+	}
+	return expenses
 }

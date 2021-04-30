@@ -20,3 +20,11 @@ func NewTestClassifier(t *testing.T) *Classifier {
 	helpers.FailTestIfErr(t, err)
 	return c
 }
+
+func NewTestTagger(t *testing.T) *Tagger {
+	yaml, err := ioutil.ReadFile(filepath.Join("test", "fixtures", "tagger.yml"))
+	helpers.FailTestIfErr(t, err)
+	tagger, err := NewTagger(yaml)
+	helpers.FailTestIfErr(t, err)
+	return tagger
+}

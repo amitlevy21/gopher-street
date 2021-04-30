@@ -1,0 +1,7 @@
+
+tags:
+  world:
+    - hello
+    - ^h.*o$
+  test:
+    - hi

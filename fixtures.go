@@ -13,6 +13,16 @@ import (
 	helpers "github.com/amitlevy21/gopher-street/test"
 )
 
+func NewTestTransaction(t *testing.T, description string) *Transaction {
+	return &Transaction{
+		Date:        helpers.UTCDate(t, 2021, 03, 18),
+		Description: description,
+		Credit:      5.0,
+		Refund:      0.0,
+		Balance:     150.0,
+	}
+}
+
 func NewTestClassifier(t *testing.T) *Classifier {
 	yaml, err := ioutil.ReadFile(filepath.Join("test", "fixtures", "classifier.yml"))
 	helpers.FailTestIfErr(t, err)

@@ -12,7 +12,7 @@ import (
 )
 
 type Classifier struct {
-	classes map[string]string
+	descriptionToClass map[string]string
 }
 
 func NewClassifier(yamlParseable []byte) (*Classifier, error) {
@@ -35,10 +35,10 @@ func NewClassifier(yamlParseable []byte) (*Classifier, error) {
 }
 
 func (c *Classifier) Class(description string) string {
-	if class, ok := c.classes[description]; ok {
+	if class, ok := c.descriptionToClass[description]; ok {
 		return class
 	}
-	for regex, class := range c.classes {
+	for regex, class := range c.descriptionToClass {
 		if matched, _ := regexp.MatchString(string(regex), string(description)); matched {
 			return class
 		}

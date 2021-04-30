@@ -20,12 +20,12 @@ const (
 )
 
 type Tagger struct {
-	tags map[string]Tag
+	classesToTags map[string][]Tag
 }
 
 func NewTagger(yamlParseable []byte) (*Tagger, error) {
-	tagsToDesc := make(map[interface{}]interface{})
-	if err := yaml.Unmarshal(yamlParseable, &tagsToDesc); err != nil {
+	tagsToClasses := make(map[interface{}]interface{})
+	if err := yaml.Unmarshal(yamlParseable, &tagsToClasses); err != nil {
 		return &Tagger{}, err
 	}
 
@@ -43,11 +43,11 @@ func NewTagger(yamlParseable []byte) (*Tagger, error) {
 }
 
 func (t *Tagger) Tag(description string) Tag {
-	if tag, ok := t.tags[description]; ok {
-		return tag
+	if tags, ok := t.classesToTags[class]; ok {
+		return tags
 	}
-	for regex, tag := range t.tags {
-		if matched, _ := regexp.MatchString(string(regex), string(description)); matched {
+	for regex, tag := range t.classesToTags {
+		if matched, _ := regexp.MatchString(string(regex), string(class)); matched {
 			return tag
 		}
 	}

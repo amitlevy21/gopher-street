@@ -22,16 +22,6 @@ var mapper map[string]int = map[string]int{
 }
 var emptySubsetter []int = []int{}
 
-func NewTestTransaction(t *testing.T, description string) *Transaction {
-	return &Transaction{
-		Date:        helpers.UTCDate(t, 2021, 03, 18),
-		Description: description,
-		Credit:      5.0,
-		Refund:      0.0,
-		Balance:     150.0,
-	}
-}
-
 func TestEmptyTransactionFromEmptyCSV(t *testing.T) {
 	r := strings.NewReader("")
 	c := NewCardTransactions(r, mapper, emptySubsetter)

@@ -28,15 +28,15 @@ func TestClass(t *testing.T) {
 		},
 		{
 			desc:            "ClassAccordingToDict",
-			classifier:      Classifier{map[string]string{"hello": "world"}},
-			transactionDesc: "hello",
-			expectedClass:   "world",
+			classifier:      Classifier{map[string]string{"description": "class"}},
+			transactionDesc: "description",
+			expectedClass:   "class",
 		},
 		{
 			desc:            "ClassAccordingToRegexInDict",
-			classifier:      Classifier{map[string]string{"^h.*o$": "world"}},
-			transactionDesc: "hello",
-			expectedClass:   "world",
+			classifier:      Classifier{map[string]string{"^d.*n$": "class"}},
+			transactionDesc: "description",
+			expectedClass:   "class",
 		},
 	}
 	for _, tC := range testCases {
@@ -56,6 +56,6 @@ func TestNewClassifierBadFile(t *testing.T) {
 
 func TestNewClassifier(t *testing.T) {
 	c := NewTestClassifier(t)
-	expected := map[string]string{"hello": "world", "^h.*o$": "world", "hi": "test"}
-	helpers.CheckEquals(t, c.classes, expected)
+	expected := map[string]string{"description1": "class1", "^d.*1$": "class1", "description2": "class2"}
+	helpers.CheckEquals(t, c.descriptionToClass, expected)
 }

@@ -1,7 +1,7 @@
 
 classes:
-  world:
-    - hello
-    - ^h.*o$
-  test:
-    - hi
+  class1:
+    - description1
+    - ^d.*1$
+  class2:
+    - description2

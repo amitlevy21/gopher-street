@@ -13,37 +13,37 @@ import (
 
 func TestTag(t *testing.T) {
 	testCases := []struct {
-		desc            string
-		tagger          Tagger
-		transactionDesc string
-		expectedTag     Tag
+		desc         string
+		tagger       Tagger
+		class        string
+		expectedTags []Tag
 	}{
 		{
-			desc: "EmptyTagWhenEmptyDescription",
+			desc:         "EmptyTagWhenEmptyClass",
+			expectedTags: []Tag{},
 		},
 		{
-			desc:            "NoTagIfNoMatch",
-			transactionDesc: "description",
-			expectedTag:     "",
+			desc:         "NoTagIfNoMatch",
+			class:        "class",
+			expectedTags: []Tag{},
 		},
 		{
-			desc:            "TagAccordingToDict",
-			tagger:          Tagger{map[string]Tag{"hello": "world"}},
-			transactionDesc: "hello",
-			expectedTag:     "world",
+			desc:         "TagAccordingToDict",
+			tagger:       Tagger{map[string][]Tag{"class": {"tag"}}},
+			class:        "class",
+			expectedTags: []Tag{"tag"},
 		},
 		{
-			desc:            "TagAccordingToRegexInDict",
-			tagger:          Tagger{map[string]Tag{"^h.*o$": "world"}},
-			transactionDesc: "hello",
-			expectedTag:     "world",
+			desc:         "TagAccordingToRegexInDict",
+			tagger:       Tagger{map[string][]Tag{"^c.*s$": {"tag"}}},
+			class:        "class",
+			expectedTags: []Tag{"tag"},
 		},
 	}
 	for _, tC := range testCases {
 		t.Run(tC.desc, func(t *testing.T) {
-			if tag := tC.tagger.Tag(tC.transactionDesc); tag != tC.expectedTag {
-				t.Errorf("expected tag %s received %s", tC.expectedTag, tag)
-			}
+			tags := tC.tagger.Tags(tC.class)
+			helpers.CheckEquals(t, tags, tC.expectedTags)
 		})
 	}
 }
@@ -56,6 +56,6 @@ func TestNewTaggerBadFile(t *testing.T) {
 
 func TestNewTagger(t *testing.T) {
 	tagger := NewTestTagger(t)
-	expected := map[string]Tag{"hello": "world", "^h.*o$": "world", "hi": "test"}
-	helpers.CheckEquals(t, tagger.tags, expected)
+	expected := map[string][]Tag{"class1": {"tag1", "tag2"}, "class2": {"tag3"}, "^c.*3$": {"tag4"}}
+	helpers.CheckEquals(t, tagger.classesToTags, expected)
 }

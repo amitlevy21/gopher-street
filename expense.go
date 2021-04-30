@@ -14,14 +14,15 @@ type Expense struct {
 	Tags   []Tag
 }
 
-func NewExpense(transactions []*Transaction, classifier *Classifier) []Expense {
+func NewExpenses(transactions []*Transaction, classifier *Classifier, tagger *Tagger) []Expense {
 	expenses := make([]Expense, 0)
 	for _, tr := range transactions {
+		class := classifier.Class(tr.Description)
 		expense := Expense{
 			Date:   tr.Date.Month(),
 			Amount: tr.Credit,
-			Class:  classifier.Class(tr.Description),
-			Tags:   []Tag{},
+			Class:  class,
+			Tags:   tagger.Tags(class),
 		}
 		expenses = append(expenses, expense)
 	}

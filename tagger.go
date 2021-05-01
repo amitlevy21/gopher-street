@@ -16,6 +16,7 @@ type Tag string
 const (
 	Recurring Tag = "Recurring"
 	Crucial   Tag = "Crucial"
+	None      Tag = "None"
 )
 
 type Tagger struct {

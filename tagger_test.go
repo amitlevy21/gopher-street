@@ -55,7 +55,7 @@ func TestNewTaggerBadFile(t *testing.T) {
 }
 
 func TestNewTagger(t *testing.T) {
-	tagger := NewTestTagger(t)
+	tagger := NewTestTagger(t, "tagger.yml")
 	expected := map[string][]Tag{"class1": {"tag1", "tag2"}, "class2": {"tag3"}, "^c.*3$": {"tag4"}}
 	helpers.CheckEquals(t, tagger.classesToTags, expected)
 }

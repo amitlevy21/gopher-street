@@ -55,7 +55,7 @@ func TestNewClassifierBadFile(t *testing.T) {
 }
 
 func TestNewClassifier(t *testing.T) {
-	c := NewTestClassifier(t)
+	c := NewTestClassifier(t, "classifier.yml")
 	expected := map[string]string{"description1": "class1", "^d.*1$": "class1", "description2": "class2"}
 	helpers.CheckEquals(t, c.descriptionToClass, expected)
 }

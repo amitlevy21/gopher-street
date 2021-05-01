@@ -31,5 +31,31 @@ func NewExpenses(transactions []Transaction, classifier *Classifier, tagger *Tag
 	return &expenses
 }
 
+func (exps *Expenses) GroupByMonth() map[time.Month]Expenses {
+	expenses := make(map[time.Month]Expenses)
+	for _, exp := range *exps {
+		expenses[exp.Date] = append(expenses[exp.Date], exp)
+	}
+	return expenses
+}
+
+func (exps *Expenses) GroupByClass() map[string]Expenses {
+	expenses := make(map[string]Expenses)
+	for _, exp := range *exps {
+		expenses[exp.Class] = append(expenses[exp.Class], exp)
+	}
+	return expenses
+}
+
+func (exps *Expenses) GroupByTag() map[Tag]Expenses {
+	expenses := make(map[Tag]Expenses)
+	for _, exp := range *exps {
+		if len(exp.Tags) == 0 {
+			expenses[Tag("None")] = append(expenses[Tag("None")], exp)
+		}
+		for _, tag := range exp.Tags {
+			expenses[tag] = append(expenses[tag], exp)
+		}
+	}
 	return expenses
 }

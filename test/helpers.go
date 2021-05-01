@@ -7,9 +7,10 @@ package test_helpers
 import (
 	"os"
 	"path/filepath"
-	"reflect"
 	"testing"
 	"time"
+
+	"github.com/google/go-cmp/cmp"
 )
 
 var fixtures string = filepath.Join("test", "fixtures")
@@ -31,8 +32,8 @@ func UTCDate(t *testing.T, year int, month time.Month, day int) time.Time {
 }
 
 func CheckEquals(t *testing.T, actual interface{}, expected interface{}) {
-	if !reflect.DeepEqual(actual, expected) {
-		t.Errorf("expected %v, received %v", expected, actual)
+	if !cmp.Equal(actual, expected) {
+		t.Errorf("expected %v, received %v\nDiff: %s", expected, actual, cmp.Diff(actual, expected))
 	}
 }
 

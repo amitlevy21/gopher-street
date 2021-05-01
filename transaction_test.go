@@ -7,6 +7,7 @@ package main
 
 import (
 	"fmt"
+	"path/filepath"
 	"strings"
 	"testing"
 
@@ -32,7 +33,7 @@ func TestEmptyTransactionFromEmptyCSV(t *testing.T) {
 }
 
 func TestSkipsBadDateRecord(t *testing.T) {
-	r := helpers.OpenFixture(t, "bad-date.csv")
+	r := helpers.OpenFixture(t, filepath.Join("transactions", "bad-date.csv"))
 	defer r.Close()
 	c := NewCardTransactions(r, mapper, emptySubsetter)
 	transactions, err := c.Transactions()
@@ -43,7 +44,7 @@ func TestSkipsBadDateRecord(t *testing.T) {
 }
 
 func TestSkipsBadRecords(t *testing.T) {
-	r := helpers.OpenFixture(t, "bad-multi.csv")
+	r := helpers.OpenFixture(t, filepath.Join("transactions", "bad-multi.csv"))
 	defer r.Close()
 	c := NewCardTransactions(r, mapper, emptySubsetter)
 	transactions, err := c.Transactions()
@@ -56,7 +57,7 @@ func TestSkipsBadRecords(t *testing.T) {
 }
 
 func TestSingleTransactionFromSingleRowCSV(t *testing.T) {
-	r := helpers.OpenFixture(t, "single-row.csv")
+	r := helpers.OpenFixture(t, filepath.Join("transactions", "single-row.csv"))
 	defer r.Close()
 	c := NewCardTransactions(r, mapper, emptySubsetter)
 	transactions, err := c.Transactions()
@@ -69,7 +70,7 @@ func TestSingleTransactionFromSingleRowCSV(t *testing.T) {
 }
 
 func TestMapsColumnsByGivenIndices(t *testing.T) {
-	r := helpers.OpenFixture(t, "single-row.csv")
+	r := helpers.OpenFixture(t, filepath.Join("transactions", "single-row.csv"))
 	defer r.Close()
 	customMapper := map[string]int{
 		"date":        7,
@@ -91,7 +92,7 @@ func TestMapsColumnsByGivenIndices(t *testing.T) {
 }
 
 func TestBadMapper(t *testing.T) {
-	r := helpers.OpenFixture(t, "single-row.csv")
+	r := helpers.OpenFixture(t, filepath.Join("transactions", "single-row.csv"))
 	defer r.Close()
 	customMapper := map[string]int{"date": 9, "not_exist": 23, "credit": 2}
 	c := NewCardTransactions(r, customMapper, emptySubsetter)
@@ -100,7 +101,7 @@ func TestBadMapper(t *testing.T) {
 }
 
 func TestEmptySubsetterShouldReadAll(t *testing.T) {
-	r := helpers.OpenFixture(t, "multiple-rows.csv")
+	r := helpers.OpenFixture(t, filepath.Join("transactions", "multiple-rows.csv"))
 	defer r.Close()
 	c := NewCardTransactions(r, mapper, emptySubsetter)
 	transactions, err := c.Transactions()
@@ -111,7 +112,7 @@ func TestEmptySubsetterShouldReadAll(t *testing.T) {
 }
 
 func TestOutOfUpperRangeSubsetter(t *testing.T) {
-	r := helpers.OpenFixture(t, "multiple-rows.csv")
+	r := helpers.OpenFixture(t, filepath.Join("transactions", "multiple-rows.csv"))
 	defer r.Close()
 	subsetter := []int{1, 4}
 	c := NewCardTransactions(r, mapper, subsetter)
@@ -120,7 +121,7 @@ func TestOutOfUpperRangeSubsetter(t *testing.T) {
 }
 
 func TestOutOfLowerRangeSubsetter(t *testing.T) {
-	r := helpers.OpenFixture(t, "single-row.csv")
+	r := helpers.OpenFixture(t, filepath.Join("transactions", "single-row.csv"))
 	defer r.Close()
 	subsetter := []int{-1, 2}
 	c := NewCardTransactions(r, mapper, subsetter)
@@ -129,7 +130,7 @@ func TestOutOfLowerRangeSubsetter(t *testing.T) {
 }
 
 func TestUnorderedSubsetter(t *testing.T) {
-	r := helpers.OpenFixture(t, "multiple-rows.csv")
+	r := helpers.OpenFixture(t, filepath.Join("transactions", "multiple-rows.csv"))
 	defer r.Close()
 	subsetter := []int{3, 1}
 	c := NewCardTransactions(r, mapper, subsetter)
@@ -143,7 +144,7 @@ func TestUnorderedSubsetter(t *testing.T) {
 }
 
 func TestSubsetsRowsByGivenIndices(t *testing.T) {
-	r := helpers.OpenFixture(t, "multiple-rows.csv")
+	r := helpers.OpenFixture(t, filepath.Join("transactions", "multiple-rows.csv"))
 	defer r.Close()
 	subsetter := []int{1, 3}
 	c := NewCardTransactions(r, mapper, subsetter)
@@ -160,7 +161,7 @@ func TestSubsetsRowsByGivenIndices(t *testing.T) {
 }
 
 func TestTransactionsFromCSV(t *testing.T) {
-	r := helpers.OpenFixture(t, "multiple-rows.csv")
+	r := helpers.OpenFixture(t, filepath.Join("transactions", "multiple-rows.csv"))
 	defer r.Close()
 	c := NewCardTransactions(r, mapper, emptySubsetter)
 	transactions, err := c.Transactions()

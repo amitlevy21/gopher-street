@@ -1,0 +1,6 @@
+
+classes:
+  Eating outside:
+    - ^pizza
+  Living:
+    - for rent

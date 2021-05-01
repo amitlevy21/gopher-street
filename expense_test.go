@@ -23,21 +23,21 @@ func TestTagString(t *testing.T) {
 }
 
 func TestNewFromEmptyTransactionAndEmptyClasses(t *testing.T) {
-	expense := NewExpenses([]*Transaction{}, &Classifier{}, &Tagger{})
-	helpers.CheckEquals(t, expense, []Expense{})
+	expense := NewExpenses([]Transaction{}, &Classifier{}, &Tagger{})
+	helpers.CheckEquals(t, expense, &Expenses{})
 }
 
 func TestNewFromEmptyTransaction(t *testing.T) {
-	cl := NewTestClassifier(t)
-	expense := NewExpenses([]*Transaction{}, cl, &Tagger{})
-	helpers.CheckEquals(t, expense, []Expense{})
+	cl := NewTestClassifier(t, "classifier.yml")
+	expense := NewExpenses([]Transaction{}, cl, &Tagger{})
+	helpers.CheckEquals(t, expense, &Expenses{})
 }
 
 func TestNewFromUnMatchingClasses(t *testing.T) {
-	cl := NewTestClassifier(t)
+	cl := NewTestClassifier(t, "classifier.yml")
 	tr := NewTestTransaction(t, "pizza")
-	expense := NewExpenses([]*Transaction{tr}, cl, &Tagger{})
-	helpers.CheckEquals(t, expense, []Expense{{
+	expense := NewExpenses([]Transaction{*tr}, cl, &Tagger{})
+	helpers.CheckEquals(t, expense, &Expenses{{
 		Date:   tr.Date.Month(),
 		Amount: tr.Credit,
 		Class:  tr.Description,
@@ -46,10 +46,10 @@ func TestNewFromUnMatchingClasses(t *testing.T) {
 }
 
 func TestNewFromMatchingClasses(t *testing.T) {
-	cl := NewTestClassifier(t)
+	cl := NewTestClassifier(t, "classifier.yml")
 	tr := NewTestTransaction(t, "description1")
-	expense := NewExpenses([]*Transaction{tr}, cl, &Tagger{})
-	helpers.CheckEquals(t, expense, []Expense{{
+	expense := NewExpenses([]Transaction{*tr}, cl, &Tagger{})
+	helpers.CheckEquals(t, expense, &Expenses{{
 		Date:   tr.Date.Month(),
 		Amount: tr.Credit,
 		Class:  "class1",
@@ -58,11 +58,11 @@ func TestNewFromMatchingClasses(t *testing.T) {
 }
 
 func TestNewFromUnMatchingTaggerAndClassifier(t *testing.T) {
-	cl := NewTestClassifier(t)
+	cl := NewTestClassifier(t, "classifier.yml")
 	tr := NewTestTransaction(t, "description1")
 	tagger := &Tagger{classesToTags: map[string][]Tag{"nonExistClass": {"someTag"}}}
-	expense := NewExpenses([]*Transaction{tr}, cl, tagger)
-	helpers.CheckEquals(t, expense, []Expense{{
+	expense := NewExpenses([]Transaction{*tr}, cl, tagger)
+	helpers.CheckEquals(t, expense, &Expenses{{
 		Date:   tr.Date.Month(),
 		Amount: tr.Credit,
 		Class:  "class1",
@@ -71,14 +71,15 @@ func TestNewFromUnMatchingTaggerAndClassifier(t *testing.T) {
 }
 
 func TestNewFromMatchingTaggerAndClassifier(t *testing.T) {
-	cl := NewTestClassifier(t)
+	cl := NewTestClassifier(t, "classifier.yml")
 	tr := NewTestTransaction(t, "description1")
-	tagger := NewTestTagger(t)
-	expense := NewExpenses([]*Transaction{tr}, cl, tagger)
-	helpers.CheckEquals(t, expense, []Expense{{
+	tagger := NewTestTagger(t, "tagger.yml")
+	expense := NewExpenses([]Transaction{*tr}, cl, tagger)
+	helpers.CheckEquals(t, expense, &Expenses{{
 		Date:   tr.Date.Month(),
 		Amount: tr.Credit,
 		Class:  "class1",
 		Tags:   []Tag{"tag1", "tag2"},
 	}})
 }
+

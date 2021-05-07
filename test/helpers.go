@@ -7,6 +7,7 @@ package test_helpers
 import (
 	"os"
 	"path/filepath"
+	"strings"
 	"testing"
 	"time"
 
@@ -46,5 +47,11 @@ func ExpectError(t *testing.T, err error) {
 func FailTestIfErr(t *testing.T, err error) {
 	if err != nil {
 		t.Errorf("unexpected error %s while running test %s", err, t.Name())
+	}
+}
+
+func ExpectContains(t *testing.T, s, subString string) {
+	if !strings.Contains(s, subString) {
+		t.Errorf("expected %s to contain %s", s, subString)
 	}
 }

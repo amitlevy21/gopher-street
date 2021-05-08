@@ -7,6 +7,7 @@ package main
 
 import (
 	"bytes"
+	"path/filepath"
 	"testing"
 
 	helpers "github.com/amitlevy21/gopher-street/test"
@@ -47,14 +48,15 @@ func TestLoadCmd(t *testing.T) {
 	cmdLoad.SetArgs([]string{"cli_test.go"})
 	err := cmdLoad.Execute()
 	helpers.FailTestIfErr(t, err)
-	helpers.ExpectContains(t, b.String(), "TODO")
+	helpers.ExpectContains(t, b.String(), "Done!")
 }
 
 func TestCLIInit(t *testing.T) {
-	CLIInit()
+	err := CLIInit(filepath.Join(fixtures, "configs", "config.yml"))
+	helpers.FailTestIfErr(t, err)
 	b := NewCmdBuffer(rootCmd)
 	rootCmd.SetArgs([]string{"load", "cli_test.go"})
-	err := rootCmd.Execute()
+	err = rootCmd.Execute()
 	helpers.FailTestIfErr(t, err)
-	helpers.ExpectContains(t, b.String(), "TODO")
+	helpers.ExpectContains(t, b.String(), "Done!")
 }

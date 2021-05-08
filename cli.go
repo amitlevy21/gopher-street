@@ -8,14 +8,14 @@ package main
 import (
 	"errors"
 	"fmt"
-	"log"
+	"math"
 	"os"
 
 	"github.com/spf13/cobra"
 )
 
 var rootCmd = &cobra.Command{
-	Use:   "gstreet",
+	Use:   "gst",
 	Short: "",
 	Long:  ``,
 }
@@ -24,14 +24,31 @@ var cmdLoad = &cobra.Command{
 	Short: "Load data from file",
 	Long:  ``,
 	Args:  validateFilePath,
-	Run: func(cmd *cobra.Command, args []string) {
-		_, err := cmd.OutOrStdout().Write([]byte("TODO"))
-		log.Printf("couldn't write cmd output: %s", err)
-	},
+	Run:   loadFile,
 }
 
-func CLIInit() {
+func CLIInit(configPath string) error {
+	err := initConfig(configPath)
 	rootCmd.AddCommand(cmdLoad)
+	return err
+}
+
+func loadFile(cmd *cobra.Command, args []string) {
+	r, _ := os.Open(args[0])
+	conf, _ := GetConfigData()
+	for _, file := range conf.Files {
+		cards := file.Cards
+		for _, card := range cards {
+			cm := makeColMapper(card)
+			rs := makeRowSubsetter(card)
+			cardTrans := NewCardTransactions(r, cm, rs, card.DateLayout)
+			_, err := cardTrans.Transactions()
+			if err != nil {
+				cmd.OutOrStderr().Write([]byte(err.Error()))
+			}
+		}
+	}
+	cmd.OutOrStdout().Write([]byte("Done!"))
 }
 
 func validateFilePath(cmd *cobra.Command, args []string) error {
@@ -46,4 +63,32 @@ func validateFilePath(cmd *cobra.Command, args []string) error {
 		return fmt.Errorf("Path is not file: %s", args[0])
 	}
 	return nil
+}
+
+func makeRowSubsetter(card Card) []int {
+	low := card.RowSubsetter.Start
+	high := card.RowSubsetter.End
+	bound := int(math.Abs(float64(low) - float64(high)))
+	rs := make([]int, bound)
+	for i, j := low, 0; i < high; i, j = i+1, j+1 {
+		rs[j] = i
+	}
+	return rs
+}
+
+func makeColMapper(card Card) map[string]int {
+	m := map[string]int{
+		"date":        card.ColMapper.Date,
+		"description": card.ColMapper.Description,
+	}
+	if card.ColMapper.Credit != 0 {
+		m["credit"] = card.ColMapper.Credit
+	}
+	if card.ColMapper.Refund != 0 {
+		m["refund"] = card.ColMapper.Refund
+	}
+	if card.ColMapper.Balance != 0 {
+		m["balance"] = card.ColMapper.Balance
+	}
+	return m
 }

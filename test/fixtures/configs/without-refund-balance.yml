@@ -1,0 +1,22 @@
+files:
+  test:
+    cards:
+      card1:
+        rowSubsetter:
+          start: 13
+          end: 59
+        colMapper:
+          date: 0
+          description: 1
+          credit: 4
+        dateLayout: "02/01/2006"
+
+classes:
+  Eating outside:
+    - ^pizza
+  Living:
+    - for rent
+
+tags:
+  Living:
+    - Crucial

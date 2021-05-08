@@ -10,7 +10,6 @@ import (
 	"fmt"
 	"io"
 	"log"
-	"math"
 	"strconv"
 	"time"
 
@@ -29,13 +28,15 @@ type CardTransactions struct {
 	df           dataframe.DataFrame
 	columnMapper map[string]int
 	rowSubsetter []int
+	dateLayout   string
 }
 
-func NewCardTransactions(r io.Reader, columnMapper map[string]int, rowSubsetter []int) *CardTransactions {
+func NewCardTransactions(r io.Reader, columnMapper map[string]int, rowSubsetter []int, dateLayout string) *CardTransactions {
 	return &CardTransactions{
 		dataframe.ReadCSV(r),
 		columnMapper,
 		rowSubsetter,
+		dateLayout,
 	}
 }
 
@@ -46,10 +47,12 @@ func (t *CardTransactions) Transactions() ([]Transaction, error) {
 	}
 	transactions := make([]Transaction, 0, len(records))
 	for _, record := range records {
-		trans, err := transaction(record, t.columnMapper)
-		if err == nil {
-			transactions = append(transactions, *trans)
+		trans, err := t.transaction(record)
+		if err != nil {
+			log.Printf("Failed to create transaction: %s", err)
+			continue
 		}
+		transactions = append(transactions, *trans)
 	}
 	return transactions, nil
 }
@@ -121,26 +124,22 @@ func (t *CardTransactions) validateColumnMapper(cols int) error {
 	return nil
 }
 
-func transaction(record []string, m map[string]int) (*Transaction, error) {
-	time, err := parseTime(record[m["date"]])
+func (t *CardTransactions) transaction(record []string) (*Transaction, error) {
+	time, err := parseTime(record[t.columnMapper["date"]], t.dateLayout)
 	if err != nil {
 		return &Transaction{}, err
 	}
-	balance, err := parseFloat(record[m["balance"]])
-	if !validFloat(balance, err) {
-		return &Transaction{}, errors.New("must have valid balance")
+	credit, refund, err := parseCreditAndRefund(t, record)
+	if err != nil {
+		return &Transaction{}, err
 	}
-	credit, err := parseFloat(record[m["credit"]])
-	refund, err2 := parseFloat(record[m["refund"]])
-	if !validFloat(credit, err) && !validFloat(refund, err2) {
-		return &Transaction{}, errors.New("must have valid credit or refund")
-	}
-	description := record[m["description"]]
+	description := parseDescription(t, record)
+	balance := t.parseBalance(record)
+
 	return &Transaction{time, description, credit, refund, balance}, nil
 }
 
-func parseTime(timeStr string) (time.Time, error) {
-	layout := "02.01.2006"
+func parseTime(timeStr string, layout string) (time.Time, error) {
 	t, err := time.Parse(layout, timeStr)
 	if err != nil {
 		log.Printf("couldn't parse time: %s", err)
@@ -148,14 +147,58 @@ func parseTime(timeStr string) (time.Time, error) {
 	return t, err
 }
 
-func parseFloat(num string) (float64, error) {
-	parsed, err := strconv.ParseFloat(num, 64)
-	if err != nil {
-		log.Printf("error when parsing float: %s", err)
+func parseCreditAndRefund(t *CardTransactions, record []string) (float64, float64, error) {
+	credit := 0.0
+	refund := 0.0
+	creditIndex, creditOk := t.columnMapper["credit"]
+	refundIndex, refundOk := t.columnMapper["refund"]
+	if !creditOk && !refundOk {
+		return 0, 0, errors.New("ColumnMapper missing both credit and refund")
 	}
-	return parsed, err
+	creditStr := ""
+	if creditOk {
+		creditStr = record[creditIndex]
+	}
+	refundStr := ""
+	if refundOk {
+		refundStr = record[refundIndex]
+	}
+	hasCredit := isValidField(creditStr)
+	hasRefund := isValidField(refundStr)
+	if hasCredit && hasRefund || !hasCredit && !hasRefund {
+		return 0, 0, errors.New("must define credit or refund but no both")
+	}
+	if hasCredit {
+		credit, _ = strconv.ParseFloat(creditStr, 64)
+	}
+	if hasRefund {
+		refund, _ = strconv.ParseFloat(refundStr, 64)
+	}
+	return credit, refund, nil
 }
 
-func validFloat(n float64, err error) bool {
-	return err == nil && !math.IsNaN(n)
+func parseDescription(t *CardTransactions, record []string) string {
+	descriptionIndex, ok := t.columnMapper["description"]
+	description := ""
+	if ok {
+		description = record[descriptionIndex]
+	}
+	return description
+}
+
+func isValidField(field string) bool {
+	return field != "" && field != "NaN"
+}
+
+func (t *CardTransactions) parseBalance(record []string) float64 {
+	balance := 0.0
+	balanceIndex, ok := t.columnMapper["balance"]
+	if ok {
+		balanceStr := record[balanceIndex]
+		hasBalance := isValidField(balanceStr)
+		if hasBalance {
+			balance, _ = strconv.ParseFloat(record[balanceIndex], 64)
+		}
+	}
+	return balance
 }

@@ -27,14 +27,15 @@ func NewTestTransaction(t *testing.T, description string) *Transaction {
 
 func NewTestCardTransactions(t *testing.T, fileName string) *CardTransactions {
 	r := helpers.OpenFixture(t, filepath.Join("transactions", fileName))
-	var mapper map[string]int = map[string]int{
+	mapper := map[string]int{
 		"date":        0,
 		"description": 1,
 		"credit":      4,
 		"refund":      5,
 		"balance":     6,
 	}
-	return NewCardTransactions(r, mapper, []int{})
+	layout := "02.01.2006"
+	return NewCardTransactions(r, mapper, []int{}, layout)
 }
 
 func NewTestClassifier(t *testing.T, fileName string) *Classifier {

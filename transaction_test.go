@@ -23,9 +23,12 @@ var mapper map[string]int = map[string]int{
 }
 var emptySubsetter []int = []int{}
 
+var layout string = "02.01.2006"
+
 func TestEmptyTransactionFromEmptyCSV(t *testing.T) {
 	r := strings.NewReader("")
-	c := NewCardTransactions(r, mapper, emptySubsetter)
+
+	c := NewCardTransactions(r, mapper, emptySubsetter, layout)
 	transactions, _ := c.Transactions()
 	if l := len(transactions); l > 0 {
 		t.Errorf("expected 0 transactions got %d", l)
@@ -35,7 +38,7 @@ func TestEmptyTransactionFromEmptyCSV(t *testing.T) {
 func TestSkipsBadDateRecord(t *testing.T) {
 	r := helpers.OpenFixture(t, filepath.Join("transactions", "bad-date.csv"))
 	defer r.Close()
-	c := NewCardTransactions(r, mapper, emptySubsetter)
+	c := NewCardTransactions(r, mapper, emptySubsetter, layout)
 	transactions, err := c.Transactions()
 	helpers.FailTestIfErr(t, err)
 	if l := len(transactions); l != 0 {
@@ -46,20 +49,23 @@ func TestSkipsBadDateRecord(t *testing.T) {
 func TestSkipsBadRecords(t *testing.T) {
 	r := helpers.OpenFixture(t, filepath.Join("transactions", "bad-multi.csv"))
 	defer r.Close()
-	c := NewCardTransactions(r, mapper, emptySubsetter)
+	c := NewCardTransactions(r, mapper, emptySubsetter, layout)
 	transactions, err := c.Transactions()
 	helpers.FailTestIfErr(t, err)
-	if l := len(transactions); l != 1 {
-		t.Fatalf("expected 1 transactions got %d", l)
+	if l := len(transactions); l != 2 {
+		t.Fatalf("expected 2 transactions got %d", l)
 	}
 	expected := NewTestTransaction(t, "pizza1")
+	expected2 := NewTestTransaction(t, "pizza3")
+	expected2.Balance = 0
 	helpers.CheckEquals(t, &transactions[0], expected)
+	helpers.CheckEquals(t, &transactions[1], expected2)
 }
 
 func TestSingleTransactionFromSingleRowCSV(t *testing.T) {
 	r := helpers.OpenFixture(t, filepath.Join("transactions", "single-row.csv"))
 	defer r.Close()
-	c := NewCardTransactions(r, mapper, emptySubsetter)
+	c := NewCardTransactions(r, mapper, emptySubsetter, layout)
 	transactions, err := c.Transactions()
 	helpers.FailTestIfErr(t, err)
 	if l := len(transactions); l != 1 {
@@ -79,7 +85,7 @@ func TestMapsColumnsByGivenIndices(t *testing.T) {
 		"refund":      5,
 		"balance":     6,
 	}
-	c := NewCardTransactions(r, customMapper, emptySubsetter)
+	c := NewCardTransactions(r, customMapper, emptySubsetter, layout)
 	transactions, err := c.Transactions()
 	helpers.FailTestIfErr(t, err)
 	if l := len(transactions); l != 1 {
@@ -91,19 +97,41 @@ func TestMapsColumnsByGivenIndices(t *testing.T) {
 	}
 }
 
-func TestBadMapper(t *testing.T) {
+func TestMapperOutOfRange(t *testing.T) {
 	r := helpers.OpenFixture(t, filepath.Join("transactions", "single-row.csv"))
 	defer r.Close()
-	customMapper := map[string]int{"date": 9, "not_exist": 23, "credit": 2}
-	c := NewCardTransactions(r, customMapper, emptySubsetter)
+	customMapper := map[string]int{"date": 23, "credit": 2}
+	c := NewCardTransactions(r, customMapper, emptySubsetter, layout)
 	_, err := c.Transactions()
 	helpers.ExpectError(t, err)
+}
+
+func TestRefundTransaction(t *testing.T) {
+	r := helpers.OpenFixture(t, filepath.Join("transactions", "with-refund.csv"))
+	defer r.Close()
+	c := NewCardTransactions(r, mapper, emptySubsetter, layout)
+	trans, err := c.Transactions()
+	helpers.FailTestIfErr(t, err)
+	if trans[0].Refund != 5.0 {
+		t.Errorf("Refund transaction not created: %v", trans[0])
+	}
+}
+
+func TestMapperMissingCreditAndRefund(t *testing.T) {
+	r := helpers.OpenFixture(t, filepath.Join("transactions", "single-row.csv"))
+	defer r.Close()
+	customMapper := map[string]int{"date": 0}
+	c := NewCardTransactions(r, customMapper, emptySubsetter, layout)
+	trans, _ := c.Transactions()
+	if l := len(trans); l != 0 {
+		t.Errorf("expected 0 transactions got %d", l)
+	}
 }
 
 func TestEmptySubsetterShouldReadAll(t *testing.T) {
 	r := helpers.OpenFixture(t, filepath.Join("transactions", "multiple-rows.csv"))
 	defer r.Close()
-	c := NewCardTransactions(r, mapper, emptySubsetter)
+	c := NewCardTransactions(r, mapper, emptySubsetter, layout)
 	transactions, err := c.Transactions()
 	helpers.FailTestIfErr(t, err)
 	if l := len(transactions); l != 4 {
@@ -115,7 +143,7 @@ func TestOutOfUpperRangeSubsetter(t *testing.T) {
 	r := helpers.OpenFixture(t, filepath.Join("transactions", "multiple-rows.csv"))
 	defer r.Close()
 	subsetter := []int{1, 4}
-	c := NewCardTransactions(r, mapper, subsetter)
+	c := NewCardTransactions(r, mapper, subsetter, layout)
 	_, err := c.Transactions()
 	helpers.ExpectError(t, err)
 }
@@ -124,7 +152,7 @@ func TestOutOfLowerRangeSubsetter(t *testing.T) {
 	r := helpers.OpenFixture(t, filepath.Join("transactions", "single-row.csv"))
 	defer r.Close()
 	subsetter := []int{-1, 2}
-	c := NewCardTransactions(r, mapper, subsetter)
+	c := NewCardTransactions(r, mapper, subsetter, layout)
 	_, err := c.Transactions()
 	helpers.ExpectError(t, err)
 }
@@ -133,7 +161,7 @@ func TestUnorderedSubsetter(t *testing.T) {
 	r := helpers.OpenFixture(t, filepath.Join("transactions", "multiple-rows.csv"))
 	defer r.Close()
 	subsetter := []int{3, 1}
-	c := NewCardTransactions(r, mapper, subsetter)
+	c := NewCardTransactions(r, mapper, subsetter, layout)
 	transactions, err := c.Transactions()
 	helpers.FailTestIfErr(t, err)
 	for i, rowIndex := range subsetter {
@@ -147,7 +175,7 @@ func TestSubsetsRowsByGivenIndices(t *testing.T) {
 	r := helpers.OpenFixture(t, filepath.Join("transactions", "multiple-rows.csv"))
 	defer r.Close()
 	subsetter := []int{1, 3}
-	c := NewCardTransactions(r, mapper, subsetter)
+	c := NewCardTransactions(r, mapper, subsetter, layout)
 	transactions, err := c.Transactions()
 	helpers.FailTestIfErr(t, err)
 	if len(transactions) != len(subsetter) {
@@ -163,7 +191,7 @@ func TestSubsetsRowsByGivenIndices(t *testing.T) {
 func TestTransactionsFromCSV(t *testing.T) {
 	r := helpers.OpenFixture(t, filepath.Join("transactions", "multiple-rows.csv"))
 	defer r.Close()
-	c := NewCardTransactions(r, mapper, emptySubsetter)
+	c := NewCardTransactions(r, mapper, emptySubsetter, layout)
 	transactions, err := c.Transactions()
 	helpers.FailTestIfErr(t, err)
 	if l := len(transactions); l != 4 {

@@ -43,20 +43,32 @@ func TestLoadCmdPathNotFile(t *testing.T) {
 	helpers.ExpectContains(t, err.Error(), "is not file")
 }
 
-func TestLoadCmd(t *testing.T) {
-	b := NewCmdBuffer(cmdLoad)
-	cmdLoad.SetArgs([]string{"cli_test.go"})
-	err := cmdLoad.Execute()
+func TestLoadOutOfRangeMapper(t *testing.T) {
+	err := CLIInit(filepath.Join(fixtures, "configs", "out-of-range.yml"))
 	helpers.FailTestIfErr(t, err)
-	helpers.ExpectContains(t, b.String(), "Done!")
+	b := NewCmdBuffer(rootCmd)
+	rootCmd.SetArgs([]string{"load", filepath.Join(fixtures, "transactions", "data.csv")})
+	err = rootCmd.Execute()
+	helpers.FailTestIfErr(t, err)
+	helpers.ExpectContains(t, b.String(), "out of range")
+}
+
+func TestLoadCmd(t *testing.T) {
+	err := CLIInit(filepath.Join(fixtures, "configs", "config.yml"))
+	helpers.FailTestIfErr(t, err)
+	b := NewCmdBuffer(rootCmd)
+	rootCmd.SetArgs([]string{"load", filepath.Join(fixtures, "transactions", "data.csv")})
+	err = rootCmd.Execute()
+	helpers.FailTestIfErr(t, err)
+	helpers.ExpectContains(t, b.String(), "{April 3500 living [Crucial]}{March 20 shirt []}{May 5 eating outside []}")
 }
 
 func TestCLIInit(t *testing.T) {
 	err := CLIInit(filepath.Join(fixtures, "configs", "config.yml"))
 	helpers.FailTestIfErr(t, err)
-	b := NewCmdBuffer(rootCmd)
-	rootCmd.SetArgs([]string{"load", "cli_test.go"})
-	err = rootCmd.Execute()
-	helpers.FailTestIfErr(t, err)
-	helpers.ExpectContains(t, b.String(), "Done!")
+}
+
+func TestGetExpensesBadFile(t *testing.T) {
+	_, err := getExpenses(&ConfigData{}, "not_exist.json")
+	helpers.ExpectError(t, err)
 }

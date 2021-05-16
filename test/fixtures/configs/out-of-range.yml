@@ -1,5 +1,5 @@
 files:
-  test:
+  data:
     cards:
       card1:
         rowSubsetter:
@@ -12,19 +12,6 @@ files:
           refund: 5
           balance: 6
         dateLayout: "02/01/2006"
-  data:
-    cards:
-      card1:
-        rowSubsetter:
-          start: 1
-          end: 4
-        colMapper:
-          date: 0
-          description: 1
-          credit: 4
-          refund: 5
-          balance: 6
-        dateLayout: "02.01.2006"
 
 classes:
   Eating outside:

@@ -7,11 +7,9 @@ package main
 
 import (
 	"regexp"
-
-	"gopkg.in/yaml.v2"
 )
 
-type Tag string
+type Tag = string
 
 const (
 	Recurring Tag = "Recurring"
@@ -21,26 +19,6 @@ const (
 
 type Tagger struct {
 	classesToTags map[string][]Tag
-}
-
-func NewTagger(yamlParseable []byte) (*Tagger, error) {
-	tagsToClasses := make(map[interface{}]interface{})
-	if err := yaml.Unmarshal(yamlParseable, &tagsToClasses); err != nil {
-		return &Tagger{}, err
-	}
-
-	classesToTags := make(map[string][]Tag)
-	for _, v := range tagsToClasses {
-		for class, tgs := range v.(map[interface{}]interface{}) {
-			className := class.(string)
-			ts := make([]Tag, len(tgs.([]interface{})))
-			for i, tg := range tgs.([]interface{}) {
-				ts[i] = Tag(tg.(string))
-			}
-			classesToTags[className] = ts
-		}
-	}
-	return &Tagger{classesToTags}, nil
 }
 
 func (t *Tagger) Tags(class string) []Tag {

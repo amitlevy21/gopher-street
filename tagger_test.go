@@ -47,15 +47,3 @@ func TestTag(t *testing.T) {
 		})
 	}
 }
-
-func TestNewTaggerBadFile(t *testing.T) {
-	badYAML := []byte("invalid YAML")
-	_, err := NewTagger(badYAML)
-	helpers.ExpectError(t, err)
-}
-
-func TestNewTagger(t *testing.T) {
-	tagger := NewTestTagger(t, "tagger.yml")
-	expected := map[string][]Tag{"class1": {"tag1", "tag2"}, "class2": {"tag3"}, "^c.*3$": {"tag4"}}
-	helpers.CheckEquals(t, tagger.classesToTags, expected)
-}

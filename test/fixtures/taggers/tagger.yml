@@ -1,9 +1,0 @@
-
-classes:
-  class1:
-    - tag1
-    - tag2
-  class2:
-    - tag3
-  ^c.*3$:
-    - tag4

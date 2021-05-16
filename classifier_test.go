@@ -48,14 +48,15 @@ func TestClass(t *testing.T) {
 	}
 }
 
-func TestNewClassifierBadFile(t *testing.T) {
-	badYAML := []byte("invalid YAML")
-	_, err := NewClassifier(badYAML)
-	helpers.ExpectError(t, err)
-}
-
 func TestNewClassifier(t *testing.T) {
-	c := NewTestClassifier(t, "classifier.yml")
-	expected := map[string]string{"description1": "class1", "^d.*1$": "class1", "description2": "class2"}
-	helpers.CheckEquals(t, c.descriptionToClass, expected)
+	classesToDescriptions := map[string][]string{
+		"Eating outside": {"^pizza"},
+		"Living":         {"for rent"},
+	}
+	descriptionToClasses := map[string]string{
+		"^pizza":   "Eating outside",
+		"for rent": "Living",
+	}
+	cl := NewClassifier(classesToDescriptions)
+	helpers.CheckEquals(t, cl.descriptionToClass, descriptionToClasses)
 }

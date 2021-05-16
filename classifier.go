@@ -7,31 +7,20 @@ package main
 
 import (
 	"regexp"
-
-	"gopkg.in/yaml.v2"
 )
 
 type Classifier struct {
 	descriptionToClass map[string]string
 }
 
-func NewClassifier(yamlParseable []byte) (*Classifier, error) {
-	classesToDesc := make(map[interface{}]interface{})
-	if err := yaml.Unmarshal(yamlParseable, &classesToDesc); err != nil {
-		return &Classifier{}, err
-	}
-
-	classes := make(map[string]string)
-	for _, v := range classesToDesc {
-		for class, descriptions := range v.(map[interface{}]interface{}) {
-			className := class.(string)
-			for _, desc := range descriptions.([]interface{}) {
-				description := desc.(string)
-				classes[description] = className
-			}
+func NewClassifier(classesToDescriptions map[string][]string) *Classifier {
+	descriptionToClass := make(map[string]string)
+	for class, descriptions := range classesToDescriptions {
+		for _, desc := range descriptions {
+			descriptionToClass[desc] = class
 		}
 	}
-	return &Classifier{classes}, nil
+	return &Classifier{descriptionToClass}
 }
 
 func (c *Classifier) Class(description string) string {

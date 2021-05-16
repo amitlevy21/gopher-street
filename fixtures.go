@@ -6,7 +6,6 @@
 package main
 
 import (
-	"io/ioutil"
 	"path/filepath"
 	"testing"
 
@@ -38,18 +37,31 @@ func NewTestCardTransactions(t *testing.T, fileName string) *CardTransactions {
 	return NewCardTransactions(r, mapper, []int{}, layout)
 }
 
-func NewTestClassifier(t *testing.T, fileName string) *Classifier {
-	yaml, err := ioutil.ReadFile(filepath.Join(fixtures, "classifiers", fileName))
-	helpers.FailTestIfErr(t, err)
-	c, err := NewClassifier(yaml)
-	helpers.FailTestIfErr(t, err)
-	return c
+func NewTestClassifier() *Classifier {
+	return &Classifier{map[string]string{
+		"description1": "class1",
+		"^d.*1$":       "class1",
+		"description2": "class2",
+	}}
 }
 
-func NewTestTagger(t *testing.T, fileName string) *Tagger {
-	yaml, err := ioutil.ReadFile(filepath.Join(fixtures, "taggers", fileName))
-	helpers.FailTestIfErr(t, err)
-	tagger, err := NewTagger(yaml)
-	helpers.FailTestIfErr(t, err)
-	return tagger
+func NewTestClassifierWithData() *Classifier {
+	return &Classifier{map[string]string{
+		"^pizza":   "Eating outside",
+		"for rent": "Living",
+	}}
+}
+
+func NewTestTagger() *Tagger {
+	return &Tagger{map[string][]Tag{
+		"class1": {"tag1", "tag2"},
+		"class2": {"tag3"},
+		"^c.*3$": {"tag4"},
+	}}
+}
+
+func NewTestTaggerWithData() *Tagger {
+	return &Tagger{map[string][]Tag{
+		"Living": {Crucial},
+	}}
 }

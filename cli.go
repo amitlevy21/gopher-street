@@ -10,12 +10,15 @@ import (
 	"fmt"
 	"math"
 	"os"
+	"path"
+	"path/filepath"
+	"strings"
 
 	"github.com/spf13/cobra"
 )
 
 var rootCmd = &cobra.Command{
-	Use:   "gst",
+	Use:   "gst1",
 	Short: "",
 	Long:  ``,
 }
@@ -34,21 +37,37 @@ func CLIInit(configPath string) error {
 }
 
 func loadFile(cmd *cobra.Command, args []string) {
-	r, _ := os.Open(args[0])
 	conf, _ := GetConfigData()
-	for _, file := range conf.Files {
-		cards := file.Cards
-		for _, card := range cards {
-			cm := makeColMapper(card)
-			rs := makeRowSubsetter(card)
-			cardTrans := NewCardTransactions(r, cm, rs, card.DateLayout)
-			_, err := cardTrans.Transactions()
-			if err != nil {
-				cmd.OutOrStderr().Write([]byte(err.Error()))
-			}
-		}
+	expenses, err := getExpenses(conf, args[0])
+	if err != nil {
+		cmd.ErrOrStderr().Write([]byte(err.Error()))
 	}
-	cmd.OutOrStdout().Write([]byte("Done!"))
+	cmd.OutOrStdout().Write([]byte(expenses.String()))
+	cmd.OutOrStdout().Write([]byte("\n\nDone!\n"))
+}
+
+func getExpenses(conf *ConfigData, transactionFileName string) (*Expenses, error) {
+	expenses := Expenses{}
+	tagger := &Tagger{conf.Tags}
+	cl := NewClassifier(conf.Classes)
+	r, err := os.Open(transactionFileName)
+	if err != nil {
+		return &Expenses{}, err
+	}
+	base := path.Base(transactionFileName)
+	noExt := strings.TrimSuffix(base, filepath.Ext(base))
+	for _, card := range conf.Files[noExt].Cards {
+		cm := makeColMapper(card)
+		rs := makeRowSubsetter(card)
+		cardTrans := NewCardTransactions(r, cm, rs, card.DateLayout)
+		trans, err := cardTrans.Transactions()
+		if err != nil {
+			return &Expenses{}, err
+		}
+		expenses = append(expenses, *NewExpenses(trans, cl, tagger)...)
+	}
+
+	return &expenses, nil
 }
 
 func validateFilePath(cmd *cobra.Command, args []string) error {

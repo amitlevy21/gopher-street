@@ -5,7 +5,10 @@
 
 package main
 
-import "time"
+import (
+	"fmt"
+	"time"
+)
 
 type Expense struct {
 	Date   time.Month
@@ -58,4 +61,12 @@ func (exps *Expenses) GroupByTag() map[Tag]Expenses {
 		}
 	}
 	return expenses
+}
+
+func (exps *Expenses) String() string {
+	str := ""
+	for _, e := range *exps {
+		str += fmt.Sprintf("%v", e)
+	}
+	return str
 }

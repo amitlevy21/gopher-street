@@ -29,13 +29,13 @@ func TestNewFromEmptyTransactionAndEmptyClasses(t *testing.T) {
 }
 
 func TestNewFromEmptyTransaction(t *testing.T) {
-	cl := NewTestClassifier(t, "classifier.yml")
+	cl := NewTestClassifier()
 	expense := NewExpenses([]Transaction{}, cl, &Tagger{})
 	helpers.CheckEquals(t, expense, &Expenses{})
 }
 
 func TestNewFromUnMatchingClasses(t *testing.T) {
-	cl := NewTestClassifier(t, "classifier.yml")
+	cl := NewTestClassifier()
 	tr := NewTestTransaction(t, "pizza")
 	expense := NewExpenses([]Transaction{*tr}, cl, &Tagger{})
 	helpers.CheckEquals(t, expense, &Expenses{{
@@ -47,7 +47,7 @@ func TestNewFromUnMatchingClasses(t *testing.T) {
 }
 
 func TestNewFromMatchingClasses(t *testing.T) {
-	cl := NewTestClassifier(t, "classifier.yml")
+	cl := NewTestClassifier()
 	tr := NewTestTransaction(t, "description1")
 	expense := NewExpenses([]Transaction{*tr}, cl, &Tagger{})
 	helpers.CheckEquals(t, expense, &Expenses{{
@@ -59,7 +59,7 @@ func TestNewFromMatchingClasses(t *testing.T) {
 }
 
 func TestNewFromUnMatchingTaggerAndClassifier(t *testing.T) {
-	cl := NewTestClassifier(t, "classifier.yml")
+	cl := NewTestClassifier()
 	tr := NewTestTransaction(t, "description1")
 	tagger := &Tagger{classesToTags: map[string][]Tag{"nonExistClass": {"someTag"}}}
 	expense := NewExpenses([]Transaction{*tr}, cl, tagger)
@@ -72,9 +72,9 @@ func TestNewFromUnMatchingTaggerAndClassifier(t *testing.T) {
 }
 
 func TestNewFromMatchingTaggerAndClassifier(t *testing.T) {
-	cl := NewTestClassifier(t, "classifier.yml")
+	cl := NewTestClassifier()
 	tr := NewTestTransaction(t, "description1")
-	tagger := NewTestTagger(t, "tagger.yml")
+	tagger := NewTestTagger()
 	expense := NewExpenses([]Transaction{*tr}, cl, tagger)
 	helpers.CheckEquals(t, expense, &Expenses{{
 		Date:   tr.Date.Month(),
@@ -85,9 +85,9 @@ func TestNewFromMatchingTaggerAndClassifier(t *testing.T) {
 }
 
 func TestGroupByDate(t *testing.T) {
-	cl := NewTestClassifier(t, "data-classifier.yml")
+	cl := NewTestClassifierWithData()
 	ct := NewTestCardTransactions(t, "data.csv")
-	tagger := NewTestTagger(t, "data-tagger.yml")
+	tagger := NewTestTaggerWithData()
 	trs, err := ct.Transactions()
 	helpers.FailTestIfErr(t, err)
 	expense := NewExpenses(trs, cl, tagger)
@@ -127,9 +127,9 @@ func TestGroupByDate(t *testing.T) {
 }
 
 func TestGroupByClass(t *testing.T) {
-	cl := NewTestClassifier(t, "data-classifier.yml")
+	cl := NewTestClassifierWithData()
 	ct := NewTestCardTransactions(t, "data.csv")
-	tagger := NewTestTagger(t, "data-tagger.yml")
+	tagger := NewTestTaggerWithData()
 	trs, err := ct.Transactions()
 	helpers.FailTestIfErr(t, err)
 	expense := NewExpenses(trs, cl, tagger)
@@ -169,9 +169,9 @@ func TestGroupByClass(t *testing.T) {
 }
 
 func TestGroupByTag(t *testing.T) {
-	cl := NewTestClassifier(t, "data-classifier.yml")
+	cl := NewTestClassifierWithData()
 	ct := NewTestCardTransactions(t, "data.csv")
-	tagger := NewTestTagger(t, "data-tagger.yml")
+	tagger := NewTestTaggerWithData()
 	trs, err := ct.Transactions()
 	helpers.FailTestIfErr(t, err)
 	expense := NewExpenses(trs, cl, tagger)

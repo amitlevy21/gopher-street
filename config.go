@@ -11,7 +11,7 @@ import (
 
 type ConfigData struct {
 	Files   Files
-	Classes Classess
+	Classes Classes
 	Tags    Tags
 }
 
@@ -42,7 +42,7 @@ type ColMapper struct {
 	Balance     int `mapstructure:",omitempty"`
 }
 
-type Classess map[string][]string
+type Classes map[string][]string
 type Tags map[string][]string
 
 func initConfig(path string) error {

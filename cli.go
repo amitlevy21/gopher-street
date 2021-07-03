@@ -18,7 +18,7 @@ import (
 )
 
 var rootCmd = &cobra.Command{
-	Use:   "gst1",
+	Use:   "gst",
 	Short: "",
 	Long:  ``,
 }
@@ -42,7 +42,8 @@ func loadFile(cmd *cobra.Command, args []string) {
 	if err != nil {
 		cmd.ErrOrStderr().Write([]byte(err.Error()))
 	}
-	cmd.OutOrStdout().Write([]byte(expenses.String()))
+	r := Reporter{}
+	cmd.OutOrStdout().Write([]byte(r.Report(expenses)))
 	cmd.OutOrStdout().Write([]byte("\n\nDone!\n"))
 }
 

@@ -60,7 +60,7 @@ func TestLoadCmd(t *testing.T) {
 	rootCmd.SetArgs([]string{"load", filepath.Join(fixtures, "transactions", "data.csv")})
 	err = rootCmd.Execute()
 	helpers.FailTestIfErr(t, err)
-	helpers.ExpectContains(t, b.String(), "{April 3500 living [Crucial]}{March 20 shirt []}{May 5 eating outside []}")
+	helpers.ExpectContains(t, b.String(), "eating outside")
 }
 
 func TestCLIInit(t *testing.T) {

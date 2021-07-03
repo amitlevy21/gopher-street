@@ -5,6 +5,9 @@
 package test_helpers
 
 import (
+	"bytes"
+	"flag"
+	"io/ioutil"
 	"os"
 	"path/filepath"
 	"strings"
@@ -15,6 +18,7 @@ import (
 )
 
 var fixtures string = filepath.Join("test", "fixtures")
+var update = flag.Bool("update", false, "update .golden files")
 
 func OpenFixture(t *testing.T, fixtureFileName string) *os.File {
 	r, err := os.Open(filepath.Join(fixtures, fixtureFileName))
@@ -53,5 +57,35 @@ func FailTestIfErr(t *testing.T, err error) {
 func ExpectContains(t *testing.T, s, subString string) {
 	if !strings.Contains(s, subString) {
 		t.Errorf("expected %s to contain %s", s, subString)
+	}
+}
+
+func CheckUpdateFlag(t *testing.T, fixture string, actual string) {
+	goldenPath := getGoldenPath(t, fixture)
+	if *update {
+		updateGoldenFile(t, goldenPath, actual)
+	}
+}
+
+func ExpectEqualsGolden(t *testing.T, fixture string, actual string) {
+	gp := getGoldenPath(t, fixture)
+	g, err := ioutil.ReadFile(gp)
+	if err != nil {
+		t.Fatalf("failed reading .golden: %s", err)
+	}
+	t.Log(string([]byte(actual)))
+	if !bytes.Equal([]byte(actual), g) {
+		t.Errorf("bytes do not match .golden file")
+	}
+}
+
+func getGoldenPath(t *testing.T, fixture string) string {
+	return filepath.Join(fixtures, fixture, t.Name()+".golden")
+}
+
+func updateGoldenFile(t *testing.T, goldenPath string, actual string) {
+	t.Log("updating golden file")
+	if err := ioutil.WriteFile(goldenPath, []byte(actual), 0644); err != nil {
+		t.Fatalf("failed to update golden file: %s", err)
 	}
 }

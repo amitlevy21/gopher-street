@@ -6,7 +6,6 @@
 package main
 
 import (
-	"fmt"
 	"time"
 )
 
@@ -61,12 +60,4 @@ func (exps *Expenses) GroupByTag() map[Tag]Expenses {
 		}
 	}
 	return expenses
-}
-
-func (exps *Expenses) String() string {
-	str := ""
-	for _, e := range *exps {
-		str += fmt.Sprintf("%v", e)
-	}
-	return str
 }

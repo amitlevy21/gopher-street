@@ -8,6 +8,8 @@ package main
 import (
 	"errors"
 	"fmt"
+	"io"
+	"log"
 	"math"
 	"os"
 	"path"
@@ -37,14 +39,22 @@ func CLIInit(configPath string) error {
 }
 
 func loadFile(cmd *cobra.Command, args []string) {
+	ctx, cancel, client := openDB()
+	defer cancel()
+	defer closeDB(ctx, client)
+	collection := client.Database("user").Collection("expenses")
 	conf, _ := GetConfigData()
 	expenses, err := getExpenses(conf, args[0])
 	if err != nil {
-		cmd.ErrOrStderr().Write([]byte(err.Error()))
+		writeCmd(cmd.ErrOrStderr(), err.Error())
 	}
+
 	r := Reporter{}
-	cmd.OutOrStdout().Write([]byte(r.Report(expenses)))
-	cmd.OutOrStdout().Write([]byte("\n\nDone!\n"))
+	if err := WriteExpensesToDB(collection, ctx, expenses); err != nil {
+		writeCmd(cmd.ErrOrStderr(), err.Error())
+	}
+	writeCmd(cmd.OutOrStdout(), r.Report(expenses))
+	writeCmd(cmd.OutOrStdout(), "\n\nDone!\n")
 }
 
 func getExpenses(conf *ConfigData, transactionFileName string) (*Expenses, error) {
@@ -111,4 +121,10 @@ func makeColMapper(card Card) map[string]int {
 		m["balance"] = card.ColMapper.Balance
 	}
 	return m
+}
+
+func writeCmd(writer io.Writer, msg string) {
+	if _, err := writer.Write([]byte(msg)); err != nil {
+		log.Printf("error while writing to cmd, %s\n", err)
+	}
 }

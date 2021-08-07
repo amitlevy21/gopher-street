@@ -72,3 +72,7 @@ func TestGetExpensesBadFile(t *testing.T) {
 	_, err := getExpenses(&ConfigData{}, "not_exist.json")
 	helpers.ExpectError(t, err)
 }
+
+func TestBadCMDWriter(t *testing.T) {
+	writeCmd(&helpers.BadWriter{}, "")
+}

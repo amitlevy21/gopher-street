@@ -7,6 +7,7 @@ package test_helpers
 import (
 	"bytes"
 	"flag"
+	"fmt"
 	"io/ioutil"
 	"os"
 	"path/filepath"
@@ -16,6 +17,8 @@ import (
 
 	"github.com/google/go-cmp/cmp"
 )
+
+type BadWriter struct{}
 
 var fixtures string = filepath.Join("test", "fixtures")
 var update = flag.Bool("update", false, "update .golden files")
@@ -88,4 +91,8 @@ func updateGoldenFile(t *testing.T, goldenPath string, actual string) {
 	if err := ioutil.WriteFile(goldenPath, []byte(actual), 0644); err != nil {
 		t.Fatalf("failed to update golden file: %s", err)
 	}
+}
+
+func (w *BadWriter) Write(p []byte) (n int, err error) {
+	return 0, fmt.Errorf("I always get it wrong!")
 }

@@ -139,7 +139,7 @@ func TestEmptySubsetterShouldReadAll(t *testing.T) {
 	}
 }
 
-func TestOutOfUpperRangeSubsetter(t *testing.T) {
+func TestOutOfUpperBoundRangeSubsetter(t *testing.T) {
 	r := helpers.OpenFixture(t, filepath.Join("transactions", "multiple-rows.csv"))
 	defer r.Close()
 	subsetter := []int{1, 4}
@@ -148,7 +148,7 @@ func TestOutOfUpperRangeSubsetter(t *testing.T) {
 	helpers.ExpectError(t, err)
 }
 
-func TestOutOfLowerRangeSubsetter(t *testing.T) {
+func TestOutOfLowerBoundRangeSubsetter(t *testing.T) {
 	r := helpers.OpenFixture(t, filepath.Join("transactions", "single-row.csv"))
 	defer r.Close()
 	subsetter := []int{-1, 2}

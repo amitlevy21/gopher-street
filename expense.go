@@ -5,12 +5,10 @@
 
 package main
 
-import (
-	"time"
-)
+import "time"
 
 type Expense struct {
-	Date   time.Month
+	Date   time.Time
 	Amount float64
 	Class  string
 	Tags   []Tag
@@ -23,7 +21,7 @@ func NewExpenses(transactions []Transaction, classifier *Classifier, tagger *Tag
 	for _, tr := range transactions {
 		class := classifier.Class(tr.Description)
 		expense := Expense{
-			Date:   tr.Date.Month(),
+			Date:   tr.Date,
 			Amount: tr.Credit,
 			Class:  class,
 			Tags:   tagger.Tags(class),
@@ -36,7 +34,7 @@ func NewExpenses(transactions []Transaction, classifier *Classifier, tagger *Tag
 func (exps *Expenses) GroupByMonth() map[time.Month]Expenses {
 	expenses := make(map[time.Month]Expenses)
 	for _, exp := range *exps {
-		expenses[exp.Date] = append(expenses[exp.Date], exp)
+		expenses[exp.Date.Month()] = append(expenses[exp.Date.Month()], exp)
 	}
 	return expenses
 }

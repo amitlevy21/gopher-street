@@ -39,7 +39,7 @@ func TestNewFromUnMatchingClasses(t *testing.T) {
 	tr := NewTestTransaction(t, "pizza")
 	expense := NewExpenses([]Transaction{*tr}, cl, &Tagger{})
 	helpers.CheckEquals(t, expense, &Expenses{{
-		Date:   tr.Date.Month(),
+		Date:   tr.Date,
 		Amount: tr.Credit,
 		Class:  tr.Description,
 		Tags:   []Tag{},
@@ -51,7 +51,7 @@ func TestNewFromMatchingClasses(t *testing.T) {
 	tr := NewTestTransaction(t, "description1")
 	expense := NewExpenses([]Transaction{*tr}, cl, &Tagger{})
 	helpers.CheckEquals(t, expense, &Expenses{{
-		Date:   tr.Date.Month(),
+		Date:   tr.Date,
 		Amount: tr.Credit,
 		Class:  "class1",
 		Tags:   []Tag{},
@@ -64,7 +64,7 @@ func TestNewFromUnMatchingTaggerAndClassifier(t *testing.T) {
 	tagger := &Tagger{classesToTags: map[string][]Tag{"nonExistClass": {"someTag"}}}
 	expense := NewExpenses([]Transaction{*tr}, cl, tagger)
 	helpers.CheckEquals(t, expense, &Expenses{{
-		Date:   tr.Date.Month(),
+		Date:   tr.Date,
 		Amount: tr.Credit,
 		Class:  "class1",
 		Tags:   []Tag{},
@@ -77,7 +77,7 @@ func TestNewFromMatchingTaggerAndClassifier(t *testing.T) {
 	tagger := NewTestTagger()
 	expense := NewExpenses([]Transaction{*tr}, cl, tagger)
 	helpers.CheckEquals(t, expense, &Expenses{{
-		Date:   tr.Date.Month(),
+		Date:   tr.Date,
 		Amount: tr.Credit,
 		Class:  "class1",
 		Tags:   []Tag{"tag1", "tag2"},
@@ -95,13 +95,13 @@ func TestGroupByDate(t *testing.T) {
 	helpers.CheckEquals(t, byMonth, map[time.Month]Expenses{
 		time.March: {
 			{
-				Date:   time.March,
+				Date:   helpers.UTCDate(t, 2021, time.March, 18),
 				Class:  "Eating outside",
 				Amount: 5,
 				Tags:   []Tag{},
 			},
 			{
-				Date:   time.March,
+				Date:   helpers.UTCDate(t, 2021, time.March, 22),
 				Class:  "shirt",
 				Amount: 20,
 				Tags:   []Tag{},
@@ -109,7 +109,7 @@ func TestGroupByDate(t *testing.T) {
 		},
 		time.April: {
 			{
-				Date:   time.April,
+				Date:   helpers.UTCDate(t, 2021, time.April, 24),
 				Class:  "Living",
 				Amount: 3500,
 				Tags:   []Tag{"Crucial"},
@@ -117,7 +117,7 @@ func TestGroupByDate(t *testing.T) {
 		},
 		time.May: {
 			{
-				Date:   time.May,
+				Date:   helpers.UTCDate(t, 2021, time.May, 5),
 				Class:  "Eating outside",
 				Amount: 5,
 				Tags:   []Tag{},
@@ -137,13 +137,13 @@ func TestGroupByClass(t *testing.T) {
 	helpers.CheckEquals(t, byMonth, map[string]Expenses{
 		"Eating outside": {
 			{
-				Date:   time.March,
+				Date:   helpers.UTCDate(t, 2021, time.March, 18),
 				Class:  "Eating outside",
 				Amount: 5,
 				Tags:   []Tag{},
 			},
 			{
-				Date:   time.May,
+				Date:   helpers.UTCDate(t, 2021, time.May, 5),
 				Class:  "Eating outside",
 				Amount: 5,
 				Tags:   []Tag{},
@@ -151,7 +151,7 @@ func TestGroupByClass(t *testing.T) {
 		},
 		"shirt": {
 			{
-				Date:   time.March,
+				Date:   helpers.UTCDate(t, 2021, time.March, 22),
 				Class:  "shirt",
 				Amount: 20,
 				Tags:   []Tag{},
@@ -159,7 +159,7 @@ func TestGroupByClass(t *testing.T) {
 		},
 		"Living": {
 			{
-				Date:   time.April,
+				Date:   helpers.UTCDate(t, 2021, time.April, 24),
 				Class:  "Living",
 				Amount: 3500,
 				Tags:   []Tag{"Crucial"},
@@ -179,7 +179,7 @@ func TestGroupByTag(t *testing.T) {
 	helpers.CheckEquals(t, byMonth, map[Tag]Expenses{
 		"Crucial": {
 			{
-				Date:   time.April,
+				Date:   helpers.UTCDate(t, 2021, time.April, 24),
 				Class:  "Living",
 				Amount: 3500,
 				Tags:   []Tag{"Crucial"},
@@ -187,19 +187,19 @@ func TestGroupByTag(t *testing.T) {
 		},
 		"None": {
 			{
-				Date:   time.March,
+				Date:   helpers.UTCDate(t, 2021, time.March, 18),
 				Class:  "Eating outside",
 				Amount: 5,
 				Tags:   []Tag{},
 			},
 			{
-				Date:   time.March,
+				Date:   helpers.UTCDate(t, 2021, time.March, 22),
 				Class:  "shirt",
 				Amount: 20,
 				Tags:   []Tag{},
 			},
 			{
-				Date:   time.May,
+				Date:   helpers.UTCDate(t, 2021, time.May, 5),
 				Class:  "Eating outside",
 				Amount: 5,
 				Tags:   []Tag{},

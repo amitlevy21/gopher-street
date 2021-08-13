@@ -24,15 +24,35 @@ func TestReportTable(t *testing.T) {
 		{
 			desc: "Single row for single expense",
 			expenses: &Expenses{
-				{Date: time.April, Amount: 53.6, Class: "Food Outside", Tags: []Tag{Crucial}},
+				{
+					Date:   helpers.UTCDate(t, 2020, time.April, 24),
+					Amount: 53.6,
+					Class:  "Food Outside",
+					Tags:   []Tag{Crucial},
+				},
 			},
 		},
 		{
 			desc: "Multiple rows with total for many expense",
 			expenses: &Expenses{
-				{Date: time.April, Amount: 53.6, Class: "Food Outside", Tags: []Tag{Crucial}},
-				{Date: time.April, Amount: 26.4, Class: "Food Outside", Tags: []Tag{Crucial}},
-				{Date: time.April, Amount: 30.0, Class: "Food Outside", Tags: []Tag{Crucial}},
+				{
+					Date:   helpers.UTCDate(t, 2020, time.April, 24),
+					Amount: 53.6,
+					Class:  "Food Outside",
+					Tags:   []Tag{Crucial},
+				},
+				{
+					Date:   helpers.UTCDate(t, 2020, time.April, 24),
+					Amount: 26.4,
+					Class:  "Food Outside",
+					Tags:   []Tag{Crucial},
+				},
+				{
+					Date:   helpers.UTCDate(t, 2020, time.April, 24),
+					Amount: 30.0,
+					Class:  "Food Outside",
+					Tags:   []Tag{Crucial},
+				},
 			},
 		},
 	}

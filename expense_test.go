@@ -6,22 +6,11 @@
 package main
 
 import (
-	"fmt"
 	"testing"
 	"time"
 
 	helpers "github.com/amitlevy21/gopher-street/test"
 )
-
-func TestTagString(t *testing.T) {
-	tags := []Tag{Recurring, Crucial, None}
-	tagStrings := [...]string{"Recurring", "Crucial", "None"}
-	for i, tag := range tags {
-		if fmt.Sprint(tag) != tagStrings[i] {
-			t.Errorf("expected %s received %s", tagStrings[i], fmt.Sprint(Recurring))
-		}
-	}
-}
 
 func TestNewFromEmptyTransactionAndEmptyClasses(t *testing.T) {
 	expense := NewExpenses([]Transaction{}, &Classifier{}, &Tagger{})

@@ -11,10 +11,14 @@ import (
 )
 
 func main() {
-	if err := CLIInit("config.yml"); err != nil {
+	LoadCLIFromConfig("config.yml")
+	Execute()
+}
+
+func LoadCLIFromConfig(configPath string) {
+	if err := CLIInit(configPath); err != nil {
 		panic(err)
 	}
-	Execute()
 }
 
 func Execute() {

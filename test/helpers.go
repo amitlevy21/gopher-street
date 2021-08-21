@@ -20,11 +20,11 @@ import (
 
 type BadWriter struct{}
 
-var fixtures string = filepath.Join("test", "fixtures")
+var Fixtures string = filepath.Join("test", "fixtures")
 var update = flag.Bool("update", false, "update .golden files")
 
 func OpenFixture(t *testing.T, fixtureFileName string) *os.File {
-	r, err := os.Open(filepath.Join(fixtures, fixtureFileName))
+	r, err := os.Open(filepath.Join(Fixtures, fixtureFileName))
 	if err != nil {
 		t.Fatalf("err while opening fixture file: %s", err)
 	}
@@ -83,7 +83,7 @@ func ExpectEqualsGolden(t *testing.T, fixture string, actual string) {
 }
 
 func getGoldenPath(t *testing.T, fixture string) string {
-	return filepath.Join(fixtures, fixture, t.Name()+".golden")
+	return filepath.Join(Fixtures, fixture, t.Name()+".golden")
 }
 
 func updateGoldenFile(t *testing.T, goldenPath string, actual string) {

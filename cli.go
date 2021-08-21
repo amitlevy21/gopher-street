@@ -11,11 +11,7 @@ import (
 	"fmt"
 	"io"
 	"log"
-	"math"
 	"os"
-	"path"
-	"path/filepath"
-	"strings"
 	"time"
 
 	"github.com/spf13/cobra"
@@ -34,54 +30,6 @@ var cmdLoad = &cobra.Command{
 	Run:   loadFile,
 }
 
-func CLIInit(configPath string) error {
-	err := initConfig(configPath)
-	rootCmd.AddCommand(cmdLoad)
-	return err
-}
-
-func loadFile(cmd *cobra.Command, args []string) {
-	conf, _ := GetConfigData()
-	expenses, err := getExpenses(conf, args[0])
-	if err != nil {
-		writeCmd(cmd.ErrOrStderr(), err.Error())
-	}
-	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
-	defer cancel()
-	db := Instance(ctx)
-	defer db.closeDB(ctx)
-	if err := db.WriteExpenses(ctx, expenses); err != nil {
-		writeCmd(cmd.ErrOrStderr(), err.Error())
-	}
-	r := Reporter{}
-	writeCmd(cmd.OutOrStdout(), r.Report(expenses))
-	writeCmd(cmd.OutOrStdout(), "\n\nDone!\n")
-}
-
-func getExpenses(conf *ConfigData, transactionFileName string) (*Expenses, error) {
-	expenses := Expenses{}
-	tagger := &Tagger{conf.Tags}
-	cl := NewClassifier(conf.Classes)
-	r, err := os.Open(transactionFileName)
-	if err != nil {
-		return &Expenses{}, err
-	}
-	base := path.Base(transactionFileName)
-	noExt := strings.TrimSuffix(base, filepath.Ext(base))
-	for _, card := range conf.Files[noExt].Cards {
-		cm := makeColMapper(card)
-		rs := makeRowSubsetter(card)
-		cardTrans := NewCardTransactions(r, cm, rs, card.DateLayout)
-		trans, err := cardTrans.Transactions()
-		if err != nil {
-			return &Expenses{}, err
-		}
-		expenses = append(expenses, *NewExpenses(trans, cl, tagger)...)
-	}
-
-	return &expenses, nil
-}
-
 func validateFilePath(cmd *cobra.Command, args []string) error {
 	if len(args) != 1 {
 		return errors.New("File path missing")
@@ -96,32 +44,44 @@ func validateFilePath(cmd *cobra.Command, args []string) error {
 	return nil
 }
 
-func makeRowSubsetter(card Card) []int {
-	low := card.RowSubsetter.Start
-	high := card.RowSubsetter.End
-	bound := int(math.Abs(float64(low) - float64(high)))
-	rs := make([]int, bound)
-	for i, j := low, 0; i < high; i, j = i+1, j+1 {
-		rs[j] = i
-	}
-	return rs
+func CLIInit(configPath string) error {
+	err := initConfig(configPath)
+	rootCmd.AddCommand(cmdLoad)
+	return err
 }
 
-func makeColMapper(card Card) map[string]int {
-	m := map[string]int{
-		"date":        card.ColMapper.Date,
-		"description": card.ColMapper.Description,
+func loadFile(cmd *cobra.Command, args []string) {
+	conf, err := GetConfigData()
+	writeErrCmd(cmd, err)
+	expenses := getExpenses(conf, args, cmd)
+	writeExpensesToDB(expenses, cmd)
+	writeReport(cmd, expenses)
+	writeCmd(cmd.OutOrStdout(), "\n\nDone!\n")
+}
+
+func getExpenses(conf *ConfigData, args []string, cmd *cobra.Command) *Expenses {
+	expenses, err := getExpensesFromFile(conf, args[0])
+	writeErrCmd(cmd, err)
+	return expenses
+}
+
+func writeExpensesToDB(expenses *Expenses, cmd *cobra.Command) {
+	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+	defer cancel()
+	db := Instance(ctx)
+	defer db.closeDB(ctx)
+	writeErrCmd(cmd, db.WriteExpenses(ctx, expenses))
+}
+
+func writeReport(cmd *cobra.Command, expenses *Expenses) {
+	r := Reporter{}
+	writeCmd(cmd.OutOrStdout(), r.Report(expenses))
+}
+
+func writeErrCmd(cmd *cobra.Command, err error) {
+	if err != nil {
+		writeCmd(cmd.ErrOrStderr(), err.Error())
 	}
-	if card.ColMapper.Credit != 0 {
-		m["credit"] = card.ColMapper.Credit
-	}
-	if card.ColMapper.Refund != 0 {
-		m["refund"] = card.ColMapper.Refund
-	}
-	if card.ColMapper.Balance != 0 {
-		m["balance"] = card.ColMapper.Balance
-	}
-	return m
 }
 
 func writeCmd(writer io.Writer, msg string) {

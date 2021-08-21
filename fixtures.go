@@ -14,6 +14,31 @@ import (
 
 var fixtures string = filepath.Join("test", "fixtures")
 
+func NewTestConfig() *ConfigData {
+	return &ConfigData{
+		Files: map[string]File{
+			"multiple-rows": {
+				Cards: map[string]Card{
+					"card1": {
+						RowSubsetter: RowSubsetter{
+							Start: 1,
+							End:   4,
+						},
+						ColMapper: ColMapper{
+							Date:        0,
+							Description: 1,
+							Credit:      4,
+							// Refund:      5,
+							// Balance:     6,
+						},
+						DateLayout: "02.01.2006",
+					},
+				},
+			},
+		},
+	}
+}
+
 func NewTestExpense(t *testing.T) *Expense {
 	return &Expense{
 		Date:   helpers.UTCDate(t, 2021, 03, 18),

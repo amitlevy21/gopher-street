@@ -13,65 +13,83 @@ import (
 	helpers "github.com/amitlevy21/gopher-street/test"
 )
 
-func TestNewFromEmptyTransactionAndEmptyClasses(t *testing.T) {
-	expense := NewExpenses([]Transaction{}, &Classifier{}, &Tagger{})
-	helpers.CheckEquals(t, expense, &Expenses{})
-}
-
-func TestNewFromEmptyTransaction(t *testing.T) {
-	cl := NewTestClassifier()
-	expense := NewExpenses([]Transaction{}, cl, &Tagger{})
-	helpers.CheckEquals(t, expense, &Expenses{})
-}
-
-func TestNewFromUnMatchingClasses(t *testing.T) {
-	cl := NewTestClassifier()
-	tr := NewTestTransaction(t, "pizza")
-	expense := NewExpenses([]Transaction{*tr}, cl, &Tagger{})
-	helpers.CheckEquals(t, expense, &Expenses{{
-		Date:   tr.Date,
-		Amount: tr.Credit,
-		Class:  tr.Description,
-		Tags:   []Tag{},
-	}})
-}
-
-func TestNewFromMatchingClasses(t *testing.T) {
-	cl := NewTestClassifier()
-	tr := NewTestTransaction(t, "description1")
-	expense := NewExpenses([]Transaction{*tr}, cl, &Tagger{})
-	helpers.CheckEquals(t, expense, &Expenses{{
-		Date:   tr.Date,
-		Amount: tr.Credit,
-		Class:  "class1",
-		Tags:   []Tag{},
-	}})
-}
-
-func TestNewFromUnMatchingTaggerAndClassifier(t *testing.T) {
-	cl := NewTestClassifier()
-	tr := NewTestTransaction(t, "description1")
-	tagger := &Tagger{classesToTags: map[string][]Tag{"nonExistClass": {"someTag"}}}
-	expense := NewExpenses([]Transaction{*tr}, cl, tagger)
-	helpers.CheckEquals(t, expense, &Expenses{{
-		Date:   tr.Date,
-		Amount: tr.Credit,
-		Class:  "class1",
-		Tags:   []Tag{},
-	}})
-}
-
-func TestNewFromMatchingTaggerAndClassifier(t *testing.T) {
-	cl := NewTestClassifier()
-	tr := NewTestTransaction(t, "description1")
-	tagger := NewTestTagger()
-	expense := NewExpenses([]Transaction{*tr}, cl, tagger)
-	helpers.CheckEquals(t, expense, &Expenses{{
-		Date:   tr.Date,
-		Amount: tr.Credit,
-		Class:  "class1",
-		Tags:   []Tag{"tag1", "tag2"},
-	}})
+func TestExpenseCreation(t *testing.T) {
+	testCases := []struct {
+		desc         string
+		transactions []Transaction
+		classifier   *Classifier
+		tagger       *Tagger
+		expected     *Expenses
+	}{
+		{
+			desc:         "From empty data -> empty expenses",
+			transactions: []Transaction{},
+			classifier:   &Classifier{},
+			tagger:       &Tagger{},
+			expected:     &Expenses{},
+		},
+		{
+			desc:         "From empty transactions -> empty expenses",
+			transactions: []Transaction{},
+			classifier:   NewTestClassifier(),
+			tagger:       &Tagger{},
+			expected:     &Expenses{},
+		},
+		{
+			desc:         "From non-matching classes -> all expenses. Class same as description",
+			transactions: []Transaction{*NewTestTransaction(t, "pizza")},
+			classifier:   NewTestClassifier(),
+			tagger:       &Tagger{},
+			expected: &Expenses{{
+				Date:   helpers.UTCDate(t, 2021, time.March, 18),
+				Amount: 5.0,
+				Class:  "pizza",
+				Tags:   []Tag{},
+			}},
+		},
+		{
+			desc:         "From matching classes -> all expenses. Class set by classifier",
+			transactions: []Transaction{*NewTestTransaction(t, "description1")},
+			classifier:   NewTestClassifier(),
+			tagger:       &Tagger{},
+			expected: &Expenses{{
+				Date:   helpers.UTCDate(t, 2021, time.March, 18),
+				Amount: 5.0,
+				Class:  "class1",
+				Tags:   []Tag{},
+			}},
+		},
+		{
+			desc:         "From non-matching tags -> all expenses. Class set by classifier",
+			transactions: []Transaction{*NewTestTransaction(t, "description1")},
+			classifier:   NewTestClassifier(),
+			tagger:       &Tagger{classesToTags: map[string][]Tag{"nonExistClass": {"someTag"}}},
+			expected: &Expenses{{
+				Date:   helpers.UTCDate(t, 2021, time.March, 18),
+				Amount: 5.0,
+				Class:  "class1",
+				Tags:   []Tag{},
+			}},
+		},
+		{
+			desc:         "From matching tags and classses -> all expenses. Class set by classifier, if tags match they should show",
+			transactions: []Transaction{*NewTestTransaction(t, "description1")},
+			classifier:   NewTestClassifier(),
+			tagger:       NewTestTagger(),
+			expected: &Expenses{{
+				Date:   helpers.UTCDate(t, 2021, time.March, 18),
+				Amount: 5.0,
+				Class:  "class1",
+				Tags:   []Tag{"tag1", "tag2"},
+			}},
+		},
+	}
+	for _, tC := range testCases {
+		t.Run(tC.desc, func(t *testing.T) {
+			expense := NewExpenses(tC.transactions, tC.classifier, tC.tagger)
+			helpers.CheckEquals(t, expense, tC.expected)
+		})
+	}
 }
 
 func TestGetExpensesBadFile(t *testing.T) {

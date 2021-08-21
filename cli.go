@@ -6,6 +6,7 @@
 package main
 
 import (
+	"context"
 	"errors"
 	"fmt"
 	"io"
@@ -15,6 +16,7 @@ import (
 	"path"
 	"path/filepath"
 	"strings"
+	"time"
 
 	"github.com/spf13/cobra"
 )
@@ -39,20 +41,19 @@ func CLIInit(configPath string) error {
 }
 
 func loadFile(cmd *cobra.Command, args []string) {
-	ctx, cancel, client := openDB()
-	defer cancel()
-	defer closeDB(ctx, client)
-	collection := client.Database("user").Collection("expenses")
 	conf, _ := GetConfigData()
 	expenses, err := getExpenses(conf, args[0])
 	if err != nil {
 		writeCmd(cmd.ErrOrStderr(), err.Error())
 	}
-
-	r := Reporter{}
-	if err := WriteExpensesToDB(collection, ctx, expenses); err != nil {
+	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+	defer cancel()
+	db := Instance(ctx)
+	defer db.closeDB(ctx)
+	if err := db.WriteExpenses(ctx, expenses); err != nil {
 		writeCmd(cmd.ErrOrStderr(), err.Error())
 	}
+	r := Reporter{}
 	writeCmd(cmd.OutOrStdout(), r.Report(expenses))
 	writeCmd(cmd.OutOrStdout(), "\n\nDone!\n")
 }

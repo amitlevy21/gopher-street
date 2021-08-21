@@ -3,28 +3,50 @@ package main
 import (
 	"context"
 	"log"
-	"time"
+	"sync"
 
+	"go.mongodb.org/mongo-driver/bson"
 	"go.mongodb.org/mongo-driver/mongo"
 	"go.mongodb.org/mongo-driver/mongo/options"
 	"go.mongodb.org/mongo-driver/mongo/readpref"
 )
 
-func WriteExpensesToDB(collection *mongo.Collection, ctx context.Context, expenses *Expenses) error {
-	converted := make([]interface{}, len(*expenses))
-	for i, e := range *expenses {
-		converted[i] = e
-	}
-	log.Println("Writing expenses to DB")
-	_, err := collection.InsertMany(ctx, converted)
+var lock = &sync.Mutex{}
 
-	return err
+type connection struct {
+	client *mongo.Client
+	ctx    context.Context
 }
 
-func openDB() (context.Context, context.CancelFunc, *mongo.Client) {
+type DB struct {
+	connection
+	database *mongo.Database
+}
+
+type cursor interface {
+	Next(context.Context) bool
+	Decode(interface{}) error
+	Err() error
+	Close(context.Context) error
+}
+
+var instance *DB
+
+func Instance(ctx context.Context) *DB {
+	if instance == nil {
+		lock.Lock()
+		defer lock.Unlock()
+		if instance == nil {
+			client := openDB(ctx)
+			instance = &DB{connection{client, ctx}, client.Database("user")}
+		}
+	}
+	return instance
+}
+
+func openDB(ctx context.Context) *mongo.Client {
 	uri := "mongodb://localhost"
-	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
-	return ctx, cancel, openDBWithURI(ctx, uri)
+	return openDBWithURI(ctx, uri)
 }
 
 func openDBWithURI(ctx context.Context, uri string) *mongo.Client {
@@ -38,8 +60,59 @@ func openDBWithURI(ctx context.Context, uri string) *mongo.Client {
 	return client
 }
 
-func closeDB(ctx context.Context, client *mongo.Client) {
-	if err := client.Disconnect(ctx); err != nil {
+func (db *DB) closeDB(ctx context.Context) {
+	lock.Lock()
+	defer lock.Unlock()
+	if err := db.client.Disconnect(ctx); err != nil {
 		panic(err)
+	}
+	instance = nil
+}
+func (db *DB) dropDB(ctx context.Context) error {
+	return db.database.Drop(ctx)
+}
+
+func (db *DB) WriteExpenses(ctx context.Context, expenses *Expenses) error {
+	col := db.database.Collection("expenses")
+	converted := make([]interface{}, len(*expenses))
+	for i, e := range *expenses {
+		converted[i] = e
+	}
+	log.Println("Writing expenses to DB")
+	_, err := col.InsertMany(ctx, converted)
+
+	return err
+}
+
+func (db *DB) GetExpenses(ctx context.Context) (*Expenses, error) {
+	col := db.database.Collection("expenses")
+	cur, err := col.Find(ctx, bson.D{})
+	if err != nil {
+		return &Expenses{}, err
+	}
+	defer db.closeCursor(ctx, cur)
+	return db.getExpensesFromCur(ctx, cur)
+}
+
+func (db *DB) getExpensesFromCur(ctx context.Context, cur cursor) (*Expenses, error) {
+	exps := Expenses{}
+	for cur.Next(ctx) {
+		var exp Expense
+		if err := cur.Decode(&exp); err != nil {
+			return &exps, err
+		}
+		exps = append(exps, exp)
+	}
+
+	if err := cur.Err(); err != nil {
+		return &exps, err
+	}
+
+	return &exps, nil
+}
+
+func (db *DB) closeCursor(ctx context.Context, cursor cursor) {
+	if err := cursor.Close(ctx); err != nil {
+		log.Printf("error while closing cursor: %s", err)
 	}
 }

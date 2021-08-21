@@ -14,6 +14,38 @@ import (
 
 var fixtures string = filepath.Join("test", "fixtures")
 
+func NewTestExpense(t *testing.T) *Expense {
+	return &Expense{
+		Date:   helpers.UTCDate(t, 2021, 03, 18),
+		Amount: 5.0,
+		Class:  "class1",
+		Tags:   []Tag{"tag1"},
+	}
+}
+
+func NewTestExpenses(t *testing.T) *Expenses {
+	return &Expenses{
+		{
+			Date:   helpers.UTCDate(t, 2021, 03, 18),
+			Amount: 5.0,
+			Class:  "class1",
+			Tags:   []Tag{"tag1"},
+		},
+		{
+			Date:   helpers.UTCDate(t, 2021, 04, 19),
+			Amount: 5.0,
+			Class:  "class1",
+			Tags:   []Tag{"tag2"},
+		},
+		{
+			Date:   helpers.UTCDate(t, 2021, 05, 20),
+			Amount: 5.0,
+			Class:  "class2",
+			Tags:   []Tag{"tag1"},
+		},
+	}
+}
+
 func NewTestTransaction(t *testing.T, description string) *Transaction {
 	return &Transaction{
 		Date:        helpers.UTCDate(t, 2021, 03, 18),

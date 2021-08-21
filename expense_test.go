@@ -6,6 +6,7 @@
 package main
 
 import (
+	"path/filepath"
 	"testing"
 	"time"
 
@@ -71,6 +72,37 @@ func TestNewFromMatchingTaggerAndClassifier(t *testing.T) {
 		Class:  "class1",
 		Tags:   []Tag{"tag1", "tag2"},
 	}})
+}
+
+func TestGetExpensesBadFile(t *testing.T) {
+	_, err := getExpensesFromFile(&ConfigData{}, "not_exist.json")
+	helpers.ExpectError(t, err)
+}
+
+func TestGetExpensesFromFile(t *testing.T) {
+	file := filepath.Join(helpers.Fixtures, "transactions", "multiple-rows.csv")
+	exps, err := getExpensesFromFile(NewTestConfig(), file)
+	helpers.FailTestIfErr(t, err)
+	helpers.CheckEquals(t, exps, &Expenses{
+		{
+			Date:   helpers.UTCDate(t, 2021, time.March, 18),
+			Amount: 5.0,
+			Class:  "pizza1",
+			Tags:   []string{},
+		},
+		{
+			Date:   helpers.UTCDate(t, 2021, time.March, 18),
+			Amount: 5.0,
+			Class:  "pizza2",
+			Tags:   []string{},
+		},
+		{
+			Date:   helpers.UTCDate(t, 2021, time.March, 18),
+			Amount: 5.0,
+			Class:  "pizza3",
+			Tags:   []string{},
+		},
+	})
 }
 
 func TestGroupByDate(t *testing.T) {

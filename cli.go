@@ -22,12 +22,18 @@ var rootCmd = &cobra.Command{
 	Short: "",
 	Long:  ``,
 }
-var cmdLoad = &cobra.Command{
+var loadcmd = &cobra.Command{
 	Use:   "load [file path]",
 	Short: "Load data from file",
 	Long:  ``,
 	Args:  validateFilePath,
 	Run:   loadFile,
+}
+var getCmd = &cobra.Command{
+	Use:   "get",
+	Short: "Get expenses from DB",
+	Long:  ``,
+	Run:   getExpensesFromDB,
 }
 
 func validateFilePath(cmd *cobra.Command, args []string) error {
@@ -46,7 +52,8 @@ func validateFilePath(cmd *cobra.Command, args []string) error {
 
 func CLIInit(configPath string) error {
 	err := initConfig(configPath)
-	rootCmd.AddCommand(cmdLoad)
+	rootCmd.AddCommand(loadcmd)
+	rootCmd.AddCommand(getCmd)
 	return err
 }
 
@@ -76,6 +83,17 @@ func writeExpensesToDB(expenses *Expenses, cmd *cobra.Command) {
 func writeReport(cmd *cobra.Command, expenses *Expenses) {
 	r := Reporter{}
 	writeCmd(cmd.OutOrStdout(), r.Report(expenses))
+}
+
+func getExpensesFromDB(cmd *cobra.Command, args []string) {
+	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+	defer cancel()
+	db := Instance(ctx)
+	defer db.closeDB(ctx)
+	expenses, err := db.GetExpenses(ctx)
+	writeErrCmd(cmd, err)
+	writeReport(cmd, expenses)
+	writeCmd(cmd.OutOrStdout(), fmt.Sprintf("\n%d expenses found\n", len(*expenses)))
 }
 
 func writeErrCmd(cmd *cobra.Command, err error) {

@@ -6,6 +6,8 @@
 package main
 
 import (
+	"strings"
+
 	"github.com/jedib0t/go-pretty/v6/table"
 )
 
@@ -36,8 +38,9 @@ func makeReportTable(expenses *Expenses, total float64) string {
 
 func appendTableBody(expenses *Expenses, t table.Writer) {
 	for i, e := range *expenses {
+		dateWithoutTime := strings.Split(e.Date.String(), " ")[0]
 		t.AppendRows([]table.Row{
-			{i, e.Date, e.Amount, e.Class, e.Tags},
+			{i, dateWithoutTime, e.Amount, e.Class, e.Tags},
 		})
 	}
 }

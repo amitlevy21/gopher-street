@@ -2,32 +2,31 @@ name: test
 
 on:
   push:
-    branches: [ main ]
+    branches: [main]
   pull_request:
-    branches: [ main ]
+    branches: [main]
 
 jobs:
-
   build:
     runs-on: ubuntu-latest
     steps:
-    - uses: actions/checkout@v2
+      - uses: actions/checkout@v2
 
-    - name: Set up Go
-      uses: actions/setup-go@v2
-      with:
-        go-version: 1.16
+      - name: Set up Go
+        uses: actions/setup-go@v2
+        with:
+          go-version: 1.16
 
-    - name: Build
-      run: go build -v
+      - name: Build
+        run: go build -v
 
-    - name: Test
-      run: |
-        docker run -d -p 27017:27017 mongo
-        go test -v -race -coverprofile=coverage.out -covermode=atomic
+      - name: Test
+        run: |
+          docker run -d -p 27017:27017 mongo
+          go test -v -race -coverprofile=coverage.out -covermode=atomic
 
-    - name: Codecov
-      uses: codecov/codecov-action@v1.3.2
-      with:
-        file: coverage.out
-        flags: unittests
+      - name: Codecov
+        uses: codecov/codecov-action@v1.3.2
+        with:
+          file: coverage.out
+          flags: unittests

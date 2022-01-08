@@ -53,6 +53,12 @@ func TestReportTable(t *testing.T) {
 					Class:  "Food Outside",
 					Tags:   []Tag{Crucial},
 				},
+				{
+					Date:   helpers.UTCDate(t, 2020, time.April, 24),
+					Amount: 30.0,
+					Class:  "Food Outside",
+					Tags:   []Tag{Crucial, Recurring},
+				},
 			},
 		},
 	}

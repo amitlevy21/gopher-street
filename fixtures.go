@@ -12,7 +12,7 @@ import (
 	helpers "github.com/amitlevy21/gopher-street/test"
 )
 
-var fixtures string = filepath.Join("test", "fixtures")
+var fixtures = filepath.Join("test", "fixtures")
 
 func NewTestConfig() *ConfigData {
 	return &ConfigData{

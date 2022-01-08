@@ -1,0 +1,21 @@
+linters:
+  disable-all: false
+  fast: false
+  enable:
+    - bodyclose
+    - contextcheck
+    - dupl
+    - exportloopref
+    - goconst
+    - gofmt
+    - goimports
+    - ifshort
+    - misspell
+    - nestif
+    - unconvert
+    - revive
+    - unused
+    - gosimple
+    - goconst
+    - gocritic
+    - misspell

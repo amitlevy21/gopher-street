@@ -14,7 +14,6 @@ type Tag = string
 const (
 	Recurring Tag = "Recurring"
 	Crucial   Tag = "Crucial"
-	None      Tag = "None"
 )
 
 type Tagger struct {
@@ -26,7 +25,7 @@ func (t *Tagger) Tags(class string) []Tag {
 		return tags
 	}
 	for regex, tag := range t.classesToTags {
-		if matched, _ := regexp.MatchString(string(regex), string(class)); matched {
+		if matched, _ := regexp.MatchString(regex, class); matched {
 			return tag
 		}
 	}

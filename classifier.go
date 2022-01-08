@@ -28,7 +28,7 @@ func (c *Classifier) Class(description string) string {
 		return class
 	}
 	for regex, class := range c.descriptionToClass {
-		if matched, _ := regexp.MatchString(string(regex), string(description)); matched {
+		if matched, _ := regexp.MatchString(regex, description); matched {
 			return class
 		}
 	}

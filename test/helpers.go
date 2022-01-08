@@ -2,7 +2,7 @@
 //
 // This software is released under the MIT License.
 // https://opensource.org/licenses/MIT
-package test_helpers
+package testhelpers
 
 import (
 	"bytes"
@@ -20,7 +20,7 @@ import (
 
 type BadWriter struct{}
 
-var Fixtures string = filepath.Join("test", "fixtures")
+var Fixtures = filepath.Join("test", "fixtures")
 var update = flag.Bool("update", false, "update .golden files")
 
 func OpenFixture(t *testing.T, fixtureFileName string) *os.File {
@@ -94,5 +94,5 @@ func updateGoldenFile(t *testing.T, goldenPath string, actual string) {
 }
 
 func (w *BadWriter) Write(p []byte) (n int, err error) {
-	return 0, fmt.Errorf("I always get it wrong!")
+	return 0, fmt.Errorf("i always get it wrong")
 }

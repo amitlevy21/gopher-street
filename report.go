@@ -33,7 +33,7 @@ func makeReportTable(expenses *Expenses, total float64) string {
 	appendTableBody(expenses, t)
 	t.AppendSeparator()
 	t.AppendFooter(table.Row{"", "Total", total})
-	return t.Render()
+	return t.Render() + "\n"
 }
 
 func appendTableBody(expenses *Expenses, t table.Writer) {

@@ -14,16 +14,16 @@ import (
 	helpers "github.com/amitlevy21/gopher-street/test"
 )
 
-var mapper map[string]int = map[string]int{
+var mapper = map[string]int{
 	"date":        0,
 	"description": 1,
 	"credit":      4,
 	"refund":      5,
 	"balance":     6,
 }
-var emptySubsetter []int = []int{}
+var emptySubsetter = []int{}
 
-var layout string = "02.01.2006"
+var layout = "02.01.2006"
 
 func TestEmptyTransactionFromEmptyCSV(t *testing.T) {
 	r := strings.NewReader("")

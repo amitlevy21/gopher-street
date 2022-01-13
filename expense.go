@@ -6,7 +6,7 @@
 package main
 
 import (
-	"math"
+	"encoding/csv"
 	"os"
 	"path"
 	"path/filepath"
@@ -42,16 +42,14 @@ func getExpensesFromFile(conf *ConfigData, transactionFileName string) (*Expense
 	expenses := Expenses{}
 	tagger := &Tagger{conf.Tags}
 	cl := NewClassifier(conf.Classes)
-	r, err := os.Open(transactionFileName)
+	r, err := readCSV(transactionFileName)
 	if err != nil {
 		return &Expenses{}, err
 	}
 	base := path.Base(transactionFileName)
 	noExt := strings.TrimSuffix(base, filepath.Ext(base))
 	for _, card := range conf.Files[noExt].Cards {
-		cm := makeColMapper(card)
-		rs := makeRowSubsetter(card)
-		cardTrans := NewCardTransactions(r, cm, rs, card.DateLayout)
+		cardTrans := NewCardTransactions(r, card.ColMapper, card.RowSubsetter, card.DateLayout)
 		trans, err := cardTrans.Transactions()
 		if err != nil {
 			return &Expenses{}, err
@@ -60,34 +58,6 @@ func getExpensesFromFile(conf *ConfigData, transactionFileName string) (*Expense
 	}
 
 	return &expenses, nil
-}
-
-func makeRowSubsetter(card Card) []int {
-	low := card.RowSubsetter.Start
-	high := card.RowSubsetter.End
-	bound := int(math.Abs(float64(low) - float64(high)))
-	rs := make([]int, bound)
-	for i, j := low, 0; i < high; i, j = i+1, j+1 {
-		rs[j] = i
-	}
-	return rs
-}
-
-func makeColMapper(card Card) map[string]int {
-	m := map[string]int{
-		"date":        card.ColMapper.Date,
-		"description": card.ColMapper.Description,
-	}
-	if card.ColMapper.Credit != 0 {
-		m["credit"] = card.ColMapper.Credit
-	}
-	if card.ColMapper.Refund != 0 {
-		m["refund"] = card.ColMapper.Refund
-	}
-	if card.ColMapper.Balance != 0 {
-		m["balance"] = card.ColMapper.Balance
-	}
-	return m
 }
 
 func (exps *Expenses) GroupByMonth() map[time.Month]Expenses {
@@ -117,4 +87,25 @@ func (exps *Expenses) GroupByTag() map[Tag]Expenses {
 		}
 	}
 	return expenses
+}
+
+func readCSV(fileName string) ([][]string, error) {
+	f, err := os.Open(fileName)
+	if err != nil {
+		return [][]string{}, err
+	}
+	defer f.Close()
+
+	r := csv.NewReader(f)
+	// skip first line
+	if _, err := r.Read(); err != nil {
+		return [][]string{}, err
+	}
+
+	records, err := r.ReadAll()
+	if err != nil {
+		return [][]string{}, err
+	}
+
+	return records, nil
 }

@@ -8,27 +8,24 @@ package main
 import (
 	"fmt"
 	"path/filepath"
-	"strings"
 	"testing"
 
 	helpers "github.com/amitlevy21/gopher-street/test"
 )
 
-var mapper = map[string]int{
-	"date":        0,
-	"description": 1,
-	"credit":      4,
-	"refund":      5,
-	"balance":     6,
+var mapper = &ColMapper{
+	Date:        0,
+	Description: 1,
+	Credit:      4,
+	Refund:      5,
+	Balance:     6,
 }
-var emptySubsetter = []int{}
+var emptySubsetter = &RowSubsetter{}
 
 var layout = "02.01.2006"
 
 func TestEmptyTransactionFromEmptyCSV(t *testing.T) {
-	r := strings.NewReader("")
-
-	c := NewCardTransactions(r, mapper, emptySubsetter, layout)
+	c := NewCardTransactions([][]string{}, mapper, emptySubsetter, layout)
 	transactions, _ := c.Transactions()
 	if l := len(transactions); l > 0 {
 		t.Errorf("expected 0 transactions got %d", l)
@@ -36,9 +33,8 @@ func TestEmptyTransactionFromEmptyCSV(t *testing.T) {
 }
 
 func TestSkipsBadDateRecord(t *testing.T) {
-	r := helpers.OpenFixture(t, filepath.Join("transactions", "bad-date.csv"))
-	defer r.Close()
-	c := NewCardTransactions(r, mapper, emptySubsetter, layout)
+	badCSV := helpers.ReadCSVFixture(t, filepath.Join("transactions", "bad-date.csv"))
+	c := NewCardTransactions(badCSV, mapper, emptySubsetter, layout)
 	transactions, err := c.Transactions()
 	helpers.FailTestIfErr(t, err)
 	if l := len(transactions); l != 0 {
@@ -47,9 +43,8 @@ func TestSkipsBadDateRecord(t *testing.T) {
 }
 
 func TestSkipsBadRecords(t *testing.T) {
-	r := helpers.OpenFixture(t, filepath.Join("transactions", "bad-multi.csv"))
-	defer r.Close()
-	c := NewCardTransactions(r, mapper, emptySubsetter, layout)
+	badCSV := helpers.ReadCSVFixture(t, filepath.Join("transactions", "bad-multi.csv"))
+	c := NewCardTransactions(badCSV, mapper, emptySubsetter, layout)
 	transactions, err := c.Transactions()
 	helpers.FailTestIfErr(t, err)
 	if l := len(transactions); l != 2 {
@@ -63,9 +58,8 @@ func TestSkipsBadRecords(t *testing.T) {
 }
 
 func TestSingleTransactionFromSingleRowCSV(t *testing.T) {
-	r := helpers.OpenFixture(t, filepath.Join("transactions", "single-row.csv"))
-	defer r.Close()
-	c := NewCardTransactions(r, mapper, emptySubsetter, layout)
+	data := helpers.ReadCSVFixture(t, filepath.Join("transactions", "single-row.csv"))
+	c := NewCardTransactions(data, mapper, emptySubsetter, layout)
 	transactions, err := c.Transactions()
 	helpers.FailTestIfErr(t, err)
 	if l := len(transactions); l != 1 {
@@ -76,16 +70,15 @@ func TestSingleTransactionFromSingleRowCSV(t *testing.T) {
 }
 
 func TestMapsColumnsByGivenIndices(t *testing.T) {
-	r := helpers.OpenFixture(t, filepath.Join("transactions", "single-row.csv"))
-	defer r.Close()
-	customMapper := map[string]int{
-		"date":        7,
-		"description": 1,
-		"credit":      4,
-		"refund":      5,
-		"balance":     6,
+	data := helpers.ReadCSVFixture(t, filepath.Join("transactions", "single-row.csv"))
+	customMapper := &ColMapper{
+		Date:        7,
+		Description: 1,
+		Credit:      4,
+		Refund:      5,
+		Balance:     6,
 	}
-	c := NewCardTransactions(r, customMapper, emptySubsetter, layout)
+	c := NewCardTransactions(data, customMapper, emptySubsetter, layout)
 	transactions, err := c.Transactions()
 	helpers.FailTestIfErr(t, err)
 	if l := len(transactions); l != 1 {
@@ -98,18 +91,16 @@ func TestMapsColumnsByGivenIndices(t *testing.T) {
 }
 
 func TestMapperOutOfRange(t *testing.T) {
-	r := helpers.OpenFixture(t, filepath.Join("transactions", "single-row.csv"))
-	defer r.Close()
-	customMapper := map[string]int{"date": 23, "credit": 2}
-	c := NewCardTransactions(r, customMapper, emptySubsetter, layout)
+	data := helpers.ReadCSVFixture(t, filepath.Join("transactions", "single-row.csv"))
+	customMapper := &ColMapper{Date: 23, Credit: 2}
+	c := NewCardTransactions(data, customMapper, emptySubsetter, layout)
 	_, err := c.Transactions()
 	helpers.ExpectError(t, err)
 }
 
 func TestRefundTransaction(t *testing.T) {
-	r := helpers.OpenFixture(t, filepath.Join("transactions", "with-refund.csv"))
-	defer r.Close()
-	c := NewCardTransactions(r, mapper, emptySubsetter, layout)
+	data := helpers.ReadCSVFixture(t, filepath.Join("transactions", "with-refund.csv"))
+	c := NewCardTransactions(data, mapper, emptySubsetter, layout)
 	trans, err := c.Transactions()
 	helpers.FailTestIfErr(t, err)
 	if trans[0].Refund != 5.0 {
@@ -118,20 +109,19 @@ func TestRefundTransaction(t *testing.T) {
 }
 
 func TestMapperMissingCreditAndRefund(t *testing.T) {
-	r := helpers.OpenFixture(t, filepath.Join("transactions", "single-row.csv"))
-	defer r.Close()
-	customMapper := map[string]int{"date": 0}
-	c := NewCardTransactions(r, customMapper, emptySubsetter, layout)
-	trans, _ := c.Transactions()
+	data := helpers.ReadCSVFixture(t, filepath.Join("transactions", "single-row.csv"))
+	customMapper := &ColMapper{Date: 0}
+	c := NewCardTransactions(data, customMapper, emptySubsetter, layout)
+	trans, err := c.Transactions()
+	helpers.FailTestIfErr(t, err)
 	if l := len(trans); l != 0 {
 		t.Errorf("expected 0 transactions got %d", l)
 	}
 }
 
 func TestEmptySubsetterShouldReadAll(t *testing.T) {
-	r := helpers.OpenFixture(t, filepath.Join("transactions", "multiple-rows.csv"))
-	defer r.Close()
-	c := NewCardTransactions(r, mapper, emptySubsetter, layout)
+	data := helpers.ReadCSVFixture(t, filepath.Join("transactions", "multiple-rows.csv"))
+	c := NewCardTransactions(data, mapper, emptySubsetter, layout)
 	transactions, err := c.Transactions()
 	helpers.FailTestIfErr(t, err)
 	if l := len(transactions); l != 4 {
@@ -140,58 +130,33 @@ func TestEmptySubsetterShouldReadAll(t *testing.T) {
 }
 
 func TestOutOfUpperBoundRangeSubsetter(t *testing.T) {
-	r := helpers.OpenFixture(t, filepath.Join("transactions", "multiple-rows.csv"))
-	defer r.Close()
-	subsetter := []int{1, 4}
-	c := NewCardTransactions(r, mapper, subsetter, layout)
+	data := helpers.ReadCSVFixture(t, filepath.Join("transactions", "multiple-rows.csv"))
+	subsetter := &RowSubsetter{1, 5}
+	c := NewCardTransactions(data, mapper, subsetter, layout)
 	_, err := c.Transactions()
 	helpers.ExpectError(t, err)
-}
-
-func TestOutOfLowerBoundRangeSubsetter(t *testing.T) {
-	r := helpers.OpenFixture(t, filepath.Join("transactions", "single-row.csv"))
-	defer r.Close()
-	subsetter := []int{-1, 2}
-	c := NewCardTransactions(r, mapper, subsetter, layout)
-	_, err := c.Transactions()
-	helpers.ExpectError(t, err)
-}
-
-func TestUnorderedSubsetter(t *testing.T) {
-	r := helpers.OpenFixture(t, filepath.Join("transactions", "multiple-rows.csv"))
-	defer r.Close()
-	subsetter := []int{3, 1}
-	c := NewCardTransactions(r, mapper, subsetter, layout)
-	transactions, err := c.Transactions()
-	helpers.FailTestIfErr(t, err)
-	for i, rowIndex := range subsetter {
-		description := fmt.Sprintf("pizza%d", rowIndex)
-		expected := NewTestTransaction(t, description)
-		helpers.CheckEquals(t, &transactions[i], expected)
-	}
 }
 
 func TestSubsetsRowsByGivenIndices(t *testing.T) {
-	r := helpers.OpenFixture(t, filepath.Join("transactions", "multiple-rows.csv"))
-	defer r.Close()
-	subsetter := []int{1, 3}
-	c := NewCardTransactions(r, mapper, subsetter, layout)
+	data := helpers.ReadCSVFixture(t, filepath.Join("transactions", "multiple-rows.csv"))
+	subsetter := &RowSubsetter{1, 3}
+	c := NewCardTransactions(data, mapper, subsetter, layout)
 	transactions, err := c.Transactions()
 	helpers.FailTestIfErr(t, err)
-	if len(transactions) != len(subsetter) {
-		t.Errorf("expected %d but got %d", len(subsetter), len(transactions))
+	expected := int(subsetter.End) - int(subsetter.Start)
+	if len(transactions) != expected {
+		t.Errorf("expected %d but got %d", expected, len(transactions))
 	}
-	for i, rowIndex := range subsetter {
-		description := fmt.Sprintf("pizza%d", rowIndex)
+	for i, j := subsetter.Start, 0; i < subsetter.End; i, j = i+1, j+1 {
+		description := fmt.Sprintf("pizza%d", i)
 		expected := NewTestTransaction(t, description)
-		helpers.CheckEquals(t, &transactions[i], expected)
+		helpers.CheckEquals(t, &transactions[j], expected)
 	}
 }
 
 func TestTransactionsFromCSV(t *testing.T) {
-	r := helpers.OpenFixture(t, filepath.Join("transactions", "multiple-rows.csv"))
-	defer r.Close()
-	c := NewCardTransactions(r, mapper, emptySubsetter, layout)
+	data := helpers.ReadCSVFixture(t, filepath.Join("transactions", "multiple-rows.csv"))
+	c := NewCardTransactions(data, mapper, emptySubsetter, layout)
 	transactions, err := c.Transactions()
 	helpers.FailTestIfErr(t, err)
 	if l := len(transactions); l != 4 {

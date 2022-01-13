@@ -8,12 +8,10 @@ package main
 import (
 	"errors"
 	"fmt"
-	"io"
 	"log"
+	"reflect"
 	"strconv"
 	"time"
-
-	"github.com/go-gota/gota/dataframe"
 )
 
 type Transaction struct {
@@ -25,15 +23,28 @@ type Transaction struct {
 }
 
 type CardTransactions struct {
-	df           dataframe.DataFrame
-	columnMapper map[string]int
-	rowSubsetter []int
+	data         [][]string
+	columnMapper *ColMapper
+	rowSubsetter *RowSubsetter
 	dateLayout   string
 }
 
-func NewCardTransactions(r io.Reader, columnMapper map[string]int, rowSubsetter []int, dateLayout string) *CardTransactions {
+type ColMapper struct {
+	Date        uint32
+	Description uint32
+	Credit      uint32 `mapstructure:",omitempty"`
+	Refund      uint32 `mapstructure:",omitempty"`
+	Balance     uint32 `mapstructure:",omitempty"`
+}
+
+type RowSubsetter struct {
+	Start uint32
+	End   uint32
+}
+
+func NewCardTransactions(data [][]string, columnMapper *ColMapper, rowSubsetter *RowSubsetter, dateLayout string) *CardTransactions {
 	return &CardTransactions{
-		dataframe.ReadCSV(r),
+		data,
 		columnMapper,
 		rowSubsetter,
 		dateLayout,
@@ -58,62 +69,48 @@ func (t *CardTransactions) Transactions() ([]Transaction, error) {
 }
 
 func (t *CardTransactions) records() ([][]string, error) {
-	if t.df.Err != nil {
-		log.Printf("error while reading CSV: %s", t.df.Err)
-		return [][]string{}, t.df.Err
-	}
 	if err := t.checkDims(); err != nil {
 		return [][]string{}, err
 	}
-	if len(t.rowSubsetter) == 0 {
-		return t.df.Records()[1:], nil
+	if t.rowSubsetter.Start == t.rowSubsetter.End {
+		return t.data, nil
 	}
-	d := t.df.Subset(t.rowSubsetter)
 
-	return d.Records()[1:], t.df.Err
+	return t.data[t.rowSubsetter.Start:t.rowSubsetter.End], nil
 }
 
 func (t *CardTransactions) checkDims() error {
-	rows, cols := t.df.Dims()
-	if err := t.validateRowSubsetter(rows); err != nil {
+	rows := len(t.data)
+	if err := t.validateRowSubsetter(uint32(rows)); err != nil {
 		return err
 	}
-	if err := t.validateColumnMapper(cols); err != nil {
-		return err
+	if rows > 0 {
+		cols := len(t.data[0])
+		if err := t.validateColumnMapper(uint32(cols)); err != nil {
+			return err
+		}
 	}
 	return nil
 }
 
-func (t *CardTransactions) validateRowSubsetter(rows int) error {
-	min, max := minMax(t.rowSubsetter)
-	if min < 0 || max > rows-1 {
+func (t *CardTransactions) validateRowSubsetter(rows uint32) error {
+	if t.rowSubsetter.Start == t.rowSubsetter.End {
+		return nil
+	}
+
+	if t.rowSubsetter.End > rows {
 		return errors.New("RowSubsetter indices out of range")
 	}
 	return nil
 }
 
-func minMax(s []int) (min int, max int) {
-	if len(s) == 0 {
-		return 0, 0
-	}
-	min = s[0]
-	max = s[0]
-	for _, e := range s[1:] {
-		if e > max {
-			max = e
-		}
-		if e < min {
-			min = e
-		}
-	}
-	return min, max
-}
-
-func (t *CardTransactions) validateColumnMapper(cols int) error {
-	invalid := make(map[string]int)
-	for k, v := range t.columnMapper {
-		if v < 0 || v >= cols {
-			invalid[k] = v
+func (t *CardTransactions) validateColumnMapper(cols uint32) error {
+	ref := reflect.ValueOf(*t.columnMapper)
+	invalid := make(map[string]uint32)
+	for i := 0; i < ref.NumField(); i++ {
+		value := ref.Field(i).Interface().(uint32)
+		if value > cols {
+			invalid[ref.Type().Field(i).Name] = value
 		}
 	}
 	if len(invalid) > 0 {
@@ -125,7 +122,7 @@ func (t *CardTransactions) validateColumnMapper(cols int) error {
 }
 
 func (t *CardTransactions) transaction(record []string) (*Transaction, error) {
-	time, err := parseTime(record[t.columnMapper["date"]], t.dateLayout)
+	time, err := parseTime(record[t.columnMapper.Date], t.dateLayout)
 	if err != nil {
 		return &Transaction{}, err
 	}
@@ -150,21 +147,15 @@ func parseTime(timeStr string, layout string) (time.Time, error) {
 func parseCreditAndRefund(t *CardTransactions, record []string) (float64, float64, error) {
 	credit := 0.0
 	refund := 0.0
-	creditIndex, creditOk := t.columnMapper["credit"]
-	refundIndex, refundOk := t.columnMapper["refund"]
-	if !creditOk && !refundOk {
-		return 0, 0, errors.New("ColumnMapper missing both credit and refund")
+	creditIndex := t.columnMapper.Credit
+	refundIndex := t.columnMapper.Refund
+	if creditIndex == refundIndex {
+		return 0, 0, errors.New("ColumnMapper has overlapping indexes for credit and refund")
 	}
-	creditStr := ""
-	if creditOk {
-		creditStr = record[creditIndex]
-	}
-	refundStr := ""
-	if refundOk {
-		refundStr = record[refundIndex]
-	}
-	hasCredit := isValidField(creditStr)
-	hasRefund := isValidField(refundStr)
+	creditStr := record[creditIndex]
+	refundStr := record[refundIndex]
+	hasCredit := isValidField(creditStr, creditIndex)
+	hasRefund := isValidField(refundStr, refundIndex)
 	if hasCredit && hasRefund || !hasCredit && !hasRefund {
 		return 0, 0, errors.New("must define credit or refund but no both")
 	}
@@ -178,27 +169,22 @@ func parseCreditAndRefund(t *CardTransactions, record []string) (float64, float6
 }
 
 func parseDescription(t *CardTransactions, record []string) string {
-	descriptionIndex, ok := t.columnMapper["description"]
-	description := ""
-	if ok {
-		description = record[descriptionIndex]
-	}
-	return description
+	descriptionIndex := t.columnMapper.Description
+	return record[descriptionIndex]
 }
 
-func isValidField(field string) bool {
-	return field != "" && field != "NaN"
+func isValidField(field string, index uint32) bool {
+	return field != "" && field != "NaN" && index > 0
 }
 
 func (t *CardTransactions) parseBalance(record []string) float64 {
 	balance := 0.0
-	balanceIndex, ok := t.columnMapper["balance"]
-	if ok {
-		balanceStr := record[balanceIndex]
-		hasBalance := isValidField(balanceStr)
-		if hasBalance {
-			balance, _ = strconv.ParseFloat(record[balanceIndex], 64)
-		}
+	balanceIndex := t.columnMapper.Balance
+	balanceStr := record[balanceIndex]
+	hasBalance := isValidField(balanceStr, balanceIndex)
+	if hasBalance {
+		balance, _ = strconv.ParseFloat(record[balanceIndex], 64)
 	}
+
 	return balance
 }

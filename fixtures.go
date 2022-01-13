@@ -20,11 +20,11 @@ func NewTestConfig() *ConfigData {
 			"multiple-rows": {
 				Cards: map[string]Card{
 					"card1": {
-						RowSubsetter: RowSubsetter{
+						RowSubsetter: &RowSubsetter{
 							Start: 1,
 							End:   4,
 						},
-						ColMapper: ColMapper{
+						ColMapper: &ColMapper{
 							Date:        0,
 							Description: 1,
 							Credit:      4,
@@ -82,16 +82,16 @@ func NewTestTransaction(t *testing.T, description string) *Transaction {
 }
 
 func NewTestCardTransactions(t *testing.T, fileName string) *CardTransactions {
-	r := helpers.OpenFixture(t, filepath.Join("transactions", fileName))
-	mapper := map[string]int{
-		"date":        0,
-		"description": 1,
-		"credit":      4,
-		"refund":      5,
-		"balance":     6,
+	data := helpers.ReadCSVFixture(t, filepath.Join("transactions", fileName))
+	mapper := &ColMapper{
+		Date:        0,
+		Description: 1,
+		Credit:      4,
+		Refund:      5,
+		Balance:     6,
 	}
 	layout := "02.01.2006"
-	return NewCardTransactions(r, mapper, []int{}, layout)
+	return NewCardTransactions(data, mapper, &RowSubsetter{}, layout)
 }
 
 func NewTestClassifier() *Classifier {

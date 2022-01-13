@@ -6,6 +6,7 @@ package testhelpers
 
 import (
 	"bytes"
+	"encoding/csv"
 	"flag"
 	"fmt"
 	"io/ioutil"
@@ -29,6 +30,24 @@ func OpenFixture(t *testing.T, fixtureFileName string) *os.File {
 		t.Fatalf("err while opening fixture file: %s", err)
 	}
 	return r
+}
+
+func ReadCSVFixture(t *testing.T, fixtureFileName string) [][]string {
+	f := OpenFixture(t, fixtureFileName)
+	defer f.Close()
+
+	r := csv.NewReader(f)
+	// skip first line
+	if _, err := r.Read(); err != nil {
+		t.Fatalf("failed to read first line of file: %s", err)
+	}
+
+	records, err := r.ReadAll()
+	if err != nil {
+		t.Fatalf("failed to read csv file: %s", err)
+	}
+
+	return records
 }
 
 func UTCDate(t *testing.T, year int, month time.Month, day int) time.Time {

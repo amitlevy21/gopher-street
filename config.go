@@ -24,22 +24,9 @@ type File struct {
 type FileCards map[string]Card
 
 type Card struct {
-	RowSubsetter RowSubsetter
-	ColMapper    ColMapper
+	RowSubsetter *RowSubsetter
+	ColMapper    *ColMapper
 	DateLayout   string
-}
-
-type RowSubsetter struct {
-	Start int
-	End   int
-}
-
-type ColMapper struct {
-	Date        int
-	Description int
-	Credit      int `mapstructure:",omitempty"`
-	Refund      int `mapstructure:",omitempty"`
-	Balance     int `mapstructure:",omitempty"`
 }
 
 type Classes map[string][]string

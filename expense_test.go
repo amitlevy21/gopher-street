@@ -93,7 +93,12 @@ func TestExpenseCreation(t *testing.T) {
 }
 
 func TestGetExpensesBadFile(t *testing.T) {
-	_, err := getExpensesFromFile(&ConfigData{}, "not_exist.json")
+	_, err := getExpensesFromFile(&ConfigData{}, "unsupported.json")
+	helpers.ExpectError(t, err)
+}
+
+func TestGetExpensesNonExist(t *testing.T) {
+	_, err := getExpensesFromFile(&ConfigData{}, "non-exist.csv")
 	helpers.ExpectError(t, err)
 }
 

@@ -98,7 +98,7 @@ func TestGetExpensesBadFile(t *testing.T) {
 }
 
 func TestGetExpensesFromFile(t *testing.T) {
-	file := filepath.Join(helpers.Fixtures, "transactions", "multiple-rows.csv")
+	file := filepath.Join(CSVTransactionsPath, "multiple-rows.csv")
 	exps, err := getExpensesFromFile(NewTestConfig(), file)
 	helpers.FailTestIfErr(t, err)
 	helpers.CheckEquals(t, exps, &Expenses{

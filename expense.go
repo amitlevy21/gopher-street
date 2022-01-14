@@ -6,8 +6,6 @@
 package main
 
 import (
-	"encoding/csv"
-	"os"
 	"path"
 	"path/filepath"
 	"strings"
@@ -38,18 +36,22 @@ func NewExpenses(transactions []Transaction, classifier *Classifier, tagger *Tag
 	return &expenses
 }
 
-func getExpensesFromFile(conf *ConfigData, transactionFileName string) (*Expenses, error) {
+func getExpensesFromFile(conf *ConfigData, transactionFilePath string) (*Expenses, error) {
 	expenses := Expenses{}
 	tagger := &Tagger{conf.Tags}
 	cl := NewClassifier(conf.Classes)
-	r, err := readCSV(transactionFileName)
+	base := path.Base(transactionFilePath)
+	noExt := strings.TrimSuffix(base, filepath.Ext(base))
+	reader, err := ReaderFactory(filepath.Ext(base))
 	if err != nil {
 		return &Expenses{}, err
 	}
-	base := path.Base(transactionFileName)
-	noExt := strings.TrimSuffix(base, filepath.Ext(base))
-	for _, card := range conf.Files[noExt].Cards {
-		cardTrans := NewCardTransactions(r, card.ColMapper, card.RowSubsetter, card.DateLayout)
+	data, err := reader.Read(transactionFilePath)
+	if err != nil {
+		return &Expenses{}, err
+	}
+	for _, card := range conf.Files[strings.ToLower(noExt)].Cards {
+		cardTrans := NewCardTransactions(data, card.ColMapper, card.RowSubsetter, card.DateLayout)
 		trans, err := cardTrans.Transactions()
 		if err != nil {
 			return &Expenses{}, err
@@ -87,25 +89,4 @@ func (exps *Expenses) GroupByTag() map[Tag]Expenses {
 		}
 	}
 	return expenses
-}
-
-func readCSV(fileName string) ([][]string, error) {
-	f, err := os.Open(fileName)
-	if err != nil {
-		return [][]string{}, err
-	}
-	defer f.Close()
-
-	r := csv.NewReader(f)
-	// skip first line
-	if _, err := r.Read(); err != nil {
-		return [][]string{}, err
-	}
-
-	records, err := r.ReadAll()
-	if err != nil {
-		return [][]string{}, err
-	}
-
-	return records, nil
 }

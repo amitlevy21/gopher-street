@@ -7,6 +7,7 @@ require (
 	github.com/jedib0t/go-pretty/v6 v6.2.2
 	github.com/spf13/cobra v1.1.3
 	github.com/spf13/viper v1.7.1
+	github.com/tealeg/xlsx v1.0.5
 	go.mongodb.org/mongo-driver v1.5.4
 )
 
@@ -37,7 +38,6 @@ require (
 	golang.org/x/sync v0.0.0-20190911185100-cd5d95a43a6e // indirect
 	golang.org/x/sys v0.0.0-20210304124612-50617c2ba197 // indirect
 	golang.org/x/text v0.3.5 // indirect
-	gopkg.in/check.v1 v1.0.0-20190902080502-41f04d3bba15 // indirect
 	gopkg.in/ini.v1 v1.51.0 // indirect
 	gopkg.in/yaml.v2 v2.4.0 // indirect
 )

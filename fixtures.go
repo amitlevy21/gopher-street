@@ -13,6 +13,9 @@ import (
 )
 
 var fixtures = filepath.Join("test", "fixtures")
+var transactionsPath = filepath.Join(fixtures, "transactions")
+var CSVTransactionsPath = filepath.Join(transactionsPath, "csv")
+var XLSXTransactionsPath = filepath.Join(transactionsPath, "xlsx")
 
 func NewTestConfig() *ConfigData {
 	return &ConfigData{
@@ -82,7 +85,7 @@ func NewTestTransaction(t *testing.T, description string) *Transaction {
 }
 
 func NewTestCardTransactions(t *testing.T, fileName string) *CardTransactions {
-	data := helpers.ReadCSVFixture(t, filepath.Join("transactions", fileName))
+	data := helpers.ReadCSVFixture(t, filepath.Join(CSVTransactionsPath, fileName))
 	mapper := &ColMapper{
 		Date:        0,
 		Description: 1,

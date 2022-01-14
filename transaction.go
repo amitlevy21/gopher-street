@@ -85,7 +85,7 @@ func (t *CardTransactions) checkDims() error {
 		return err
 	}
 	if rows > 0 {
-		cols := len(t.data[0])
+		cols := len(t.data[t.rowSubsetter.Start])
 		if err := t.validateColumnMapper(uint32(cols)); err != nil {
 			return err
 		}

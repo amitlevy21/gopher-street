@@ -25,7 +25,7 @@ var Fixtures = filepath.Join("test", "fixtures")
 var update = flag.Bool("update", false, "update .golden files")
 
 func OpenFixture(t *testing.T, fixtureFileName string) *os.File {
-	r, err := os.Open(filepath.Join(Fixtures, fixtureFileName))
+	r, err := os.Open(fixtureFileName)
 	if err != nil {
 		t.Fatalf("err while opening fixture file: %s", err)
 	}

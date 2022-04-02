@@ -28,6 +28,9 @@ func ReaderFactory(fileExtension string) (TransactionReader, error) {
 
 func (r *XLSXReader) Read(filePath string) ([][]string, error) {
 	s, err := xlsx.FileToSlice(filePath)
+	if err != nil {
+		return [][]string{}, err
+	}
 	return s[0], err
 }
 

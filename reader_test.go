@@ -26,6 +26,13 @@ func TestCSVReaderNotExist(t *testing.T) {
 	helpers.ExpectError(t, err)
 }
 
+func TestCSVReaderNotCSV(t *testing.T) {
+	r, err := ReaderFactory(".csv")
+	helpers.FailTestIfErr(t, err)
+	_, err = r.Read(filepath.Join(CSVTransactionsPath, "bad-csv.csv"))
+	helpers.ExpectError(t, err)
+}
+
 func TestCSVReaderSingleLine(t *testing.T) {
 	r, err := ReaderFactory(".csv")
 	helpers.FailTestIfErr(t, err)
@@ -38,6 +45,13 @@ func TestCSVReader(t *testing.T) {
 	helpers.FailTestIfErr(t, err)
 	_, err = r.Read(filepath.Join(CSVTransactionsPath, "data.csv"))
 	helpers.FailTestIfErr(t, err)
+}
+
+func TestXLSXReaderNotXLSX(t *testing.T) {
+	r, err := ReaderFactory(".xlsx")
+	helpers.FailTestIfErr(t, err)
+	_, err = r.Read(filepath.Join(CSVTransactionsPath, "bad-csv.csv"))
+	helpers.ExpectError(t, err)
 }
 
 func TestXLSXReader(t *testing.T) {

@@ -6,6 +6,7 @@
 package main
 
 import (
+	"fmt"
 	"path"
 	"path/filepath"
 	"strings"
@@ -50,7 +51,11 @@ func getExpensesFromFile(conf *ConfigData, transactionFilePath string) (*Expense
 	if err != nil {
 		return &Expenses{}, err
 	}
-	for _, card := range conf.Files[strings.ToLower(noExt)].Cards {
+	transactionFileConfig, ok := conf.Files[strings.ToLower(noExt)]
+	if !ok {
+		return &Expenses{}, fmt.Errorf("no configuration found for transaction file: %s", noExt)
+	}
+	for _, card := range transactionFileConfig.Cards {
 		cardTrans := NewCardTransactions(data, card.ColMapper, card.RowSubsetter, card.DateLayout)
 		trans, err := cardTrans.Transactions()
 		if err != nil {

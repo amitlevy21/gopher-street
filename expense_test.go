@@ -102,6 +102,12 @@ func TestGetExpensesNonExist(t *testing.T) {
 	helpers.ExpectError(t, err)
 }
 
+func TestGetExpensesFileDontAppearInConfig(t *testing.T) {
+	file := filepath.Join(CSVTransactionsPath, "with-refund.csv")
+	_, err := getExpensesFromFile(NewTestConfig(), file)
+	helpers.ExpectError(t, err)
+}
+
 func TestGetExpensesFromFile(t *testing.T) {
 	file := filepath.Join(CSVTransactionsPath, "multiple-rows.csv")
 	exps, err := getExpensesFromFile(NewTestConfig(), file)

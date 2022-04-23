@@ -61,7 +61,7 @@ func loadFile(cmd *cobra.Command, args []string) {
 	conf, err := GetConfigData()
 	writeErrCmd(cmd, err)
 	expenses := getExpenses(conf, args, cmd)
-	if len(*expenses) > 0 {
+	if len(expenses.ToSlice()) > 0 {
 		writeExpensesToDB(expenses, cmd)
 	}
 	writeCmd(cmd.OutOrStdout(), "\n")
@@ -96,7 +96,7 @@ func getExpensesFromDB(cmd *cobra.Command, args []string) {
 	expenses, err := db.GetExpenses(ctx)
 	writeErrCmd(cmd, err)
 	writeReport(cmd, expenses)
-	writeCmd(cmd.OutOrStdout(), fmt.Sprintf("\n%d expenses found\n", len(*expenses)))
+	writeCmd(cmd.OutOrStdout(), fmt.Sprintf("\n%d expenses found\n", len(expenses.ToSlice())))
 }
 
 func writeErrCmd(cmd *cobra.Command, err error) {

@@ -6,6 +6,7 @@
 package main
 
 import (
+	"fmt"
 	"regexp"
 )
 
@@ -23,14 +24,14 @@ func NewClassifier(classesToDescriptions map[string][]string) *Classifier {
 	return &Classifier{descriptionToClass}
 }
 
-func (c *Classifier) Class(description string) string {
+func (c *Classifier) Class(description string) (string, error) {
 	if class, ok := c.descriptionToClass[description]; ok {
-		return class
+		return class, nil
 	}
 	for regex, class := range c.descriptionToClass {
 		if matched, _ := regexp.MatchString(regex, description); matched {
-			return class
+			return class, nil
 		}
 	}
-	return description
+	return description, fmt.Errorf("no class found for %s", description)
 }

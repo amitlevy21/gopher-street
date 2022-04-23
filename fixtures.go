@@ -52,7 +52,7 @@ func NewTestExpense(t *testing.T) *Expense {
 }
 
 func NewTestExpenses(t *testing.T) *Expenses {
-	return &Expenses{
+	return &Expenses{Classified: []*Expense{
 		{
 			Date:   helpers.UTCDate(t, 2021, 03, 18),
 			Amount: 5.0,
@@ -71,7 +71,7 @@ func NewTestExpenses(t *testing.T) *Expenses {
 			Class:  "class2",
 			Tags:   []Tag{"tag1"},
 		},
-	}
+	}}
 }
 
 func NewTestTransaction(t *testing.T, description string) *Transaction {

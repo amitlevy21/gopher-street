@@ -74,8 +74,8 @@ func (db *DB) dropDB(ctx context.Context) error {
 
 func (db *DB) WriteExpenses(ctx context.Context, expenses *Expenses) error {
 	col := db.database.Collection("expenses")
-	converted := make([]interface{}, len(*expenses))
-	for i, e := range *expenses {
+	converted := make([]interface{}, len(expenses.ToSlice()))
+	for i, e := range expenses.ToSlice() {
 		converted[i] = e
 	}
 	log.Println("Writing expenses to DB")
@@ -101,7 +101,7 @@ func (db *DB) getExpensesFromCur(ctx context.Context, cur cursor) (*Expenses, er
 		if err := cur.Decode(&exp); err != nil {
 			return &exps, err
 		}
-		exps = append(exps, exp)
+		exps.Classified = append(exps.Classified, &exp)
 	}
 
 	if err := cur.Err(); err != nil {

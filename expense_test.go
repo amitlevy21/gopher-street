@@ -26,62 +26,64 @@ func TestExpenseCreation(t *testing.T) {
 			transactions: []Transaction{},
 			classifier:   &Classifier{},
 			tagger:       &Tagger{},
-			expected:     &Expenses{},
+			expected:     &Expenses{Classified: []*Expense{}, Unclassified: []*Expense{}},
 		},
 		{
 			desc:         "From empty transactions -> empty expenses",
 			transactions: []Transaction{},
 			classifier:   NewTestClassifier(),
 			tagger:       &Tagger{},
-			expected:     &Expenses{},
+			expected:     NewEmptyExpenses(),
 		},
 		{
 			desc:         "From non-matching classes -> all expenses. Class same as description",
 			transactions: []Transaction{*NewTestTransaction(t, "pizza")},
 			classifier:   NewTestClassifier(),
 			tagger:       &Tagger{},
-			expected: &Expenses{{
+			expected: &Expenses{Unclassified: []*Expense{{
 				Date:   helpers.UTCDate(t, 2021, time.March, 18),
 				Amount: 5.0,
 				Class:  "pizza",
-				Tags:   []Tag{},
-			}},
+				Tags:   []Tag{}},
+			}, Classified: []*Expense{}},
 		},
 		{
 			desc:         "From matching classes -> all expenses. Class set by classifier",
 			transactions: []Transaction{*NewTestTransaction(t, "description1")},
 			classifier:   NewTestClassifier(),
 			tagger:       &Tagger{},
-			expected: &Expenses{{
+			expected: &Expenses{Classified: []*Expense{{
 				Date:   helpers.UTCDate(t, 2021, time.March, 18),
 				Amount: 5.0,
 				Class:  "class1",
-				Tags:   []Tag{},
-			}},
+				Tags:   []Tag{}},
+			}, Unclassified: []*Expense{}},
 		},
 		{
 			desc:         "From non-matching tags -> all expenses. Class set by classifier",
 			transactions: []Transaction{*NewTestTransaction(t, "description1")},
 			classifier:   NewTestClassifier(),
 			tagger:       &Tagger{classesToTags: map[string][]Tag{"nonExistClass": {"someTag"}}},
-			expected: &Expenses{{
-				Date:   helpers.UTCDate(t, 2021, time.March, 18),
-				Amount: 5.0,
-				Class:  "class1",
-				Tags:   []Tag{},
-			}},
+			expected: &Expenses{Classified: []*Expense{
+				{
+					Date:   helpers.UTCDate(t, 2021, time.March, 18),
+					Amount: 5.0,
+					Class:  "class1",
+					Tags:   []Tag{},
+				},
+			}, Unclassified: []*Expense{}},
 		},
 		{
 			desc:         "From matching tags and classses -> all expenses. Class set by classifier, if tags match they should show",
 			transactions: []Transaction{*NewTestTransaction(t, "description1")},
 			classifier:   NewTestClassifier(),
 			tagger:       NewTestTagger(),
-			expected: &Expenses{{
+			expected: &Expenses{Classified: []*Expense{{
 				Date:   helpers.UTCDate(t, 2021, time.March, 18),
 				Amount: 5.0,
 				Class:  "class1",
-				Tags:   []Tag{"tag1", "tag2"},
-			}},
+				Tags:   []Tag{"tag1", "tag2"}},
+			}, Unclassified: []*Expense{}},
 		},
 	}
 	for _, tC := range testCases {
@@ -112,7 +114,7 @@ func TestGetExpensesFromFile(t *testing.T) {
 	file := filepath.Join(CSVTransactionsPath, "multiple-rows.csv")
 	exps, err := getExpensesFromFile(NewTestConfig(), file)
 	helpers.FailTestIfErr(t, err)
-	helpers.CheckEquals(t, exps, &Expenses{
+	helpers.CheckEquals(t, exps.ToSlice(), []*Expense{
 		{
 			Date:   helpers.UTCDate(t, 2021, time.March, 18),
 			Amount: 5.0,
@@ -142,7 +144,7 @@ func TestGroupByDate(t *testing.T) {
 	helpers.FailTestIfErr(t, err)
 	expense := NewExpenses(trs, cl, tagger)
 	byMonth := expense.GroupByMonth()
-	helpers.CheckEquals(t, byMonth, map[time.Month]Expenses{
+	helpers.CheckEquals(t, byMonth, map[time.Month][]Expense{
 		time.March: {
 			{
 				Date:   helpers.UTCDate(t, 2021, time.March, 18),
@@ -184,7 +186,7 @@ func TestGroupByClass(t *testing.T) {
 	helpers.FailTestIfErr(t, err)
 	expense := NewExpenses(trs, cl, tagger)
 	byMonth := expense.GroupByClass()
-	helpers.CheckEquals(t, byMonth, map[string]Expenses{
+	helpers.CheckEquals(t, byMonth, map[string][]Expense{
 		"Eating outside": {
 			{
 				Date:   helpers.UTCDate(t, 2021, time.March, 18),
@@ -226,7 +228,7 @@ func TestGroupByTag(t *testing.T) {
 	helpers.FailTestIfErr(t, err)
 	expense := NewExpenses(trs, cl, tagger)
 	byMonth := expense.GroupByTag()
-	helpers.CheckEquals(t, byMonth, map[Tag]Expenses{
+	helpers.CheckEquals(t, byMonth, map[Tag][]Expense{
 		"Crucial": {
 			{
 				Date:   helpers.UTCDate(t, 2021, time.April, 24),

@@ -1,10 +1,10 @@
 files:
-  test:
+  Export_2_2022:
     cards:
       card1:
         rowSubsetter:
-          start: 13
-          end: 59
+          start: 10
+          end: 31
         colMapper:
           date: 0
           description: 1

@@ -98,6 +98,19 @@ func TestCloseBadCursor(t *testing.T) {
 	db.closeCursor(ctx, c)
 }
 
+func TestErrWhileGetting(t *testing.T) {
+	ctx, cancel := context.WithCancel(context.Background())
+	defer cancel()
+	db := Instance(ctx)
+	defer db.closeDB(ctx)
+
+	ctx2, cancel := context.WithCancel(context.Background())
+	cancel()
+	exp, err := db.GetExpenses(ctx2)
+	helpers.ExpectError(t, err)
+	helpers.CheckEquals(t, &Expenses{}, exp)
+}
+
 func TestDB(t *testing.T) {
 	ctx, cancel := context.WithCancel(context.Background())
 	defer cancel()
@@ -112,22 +125,22 @@ func TestDB(t *testing.T) {
 	})
 	t.Run("TestWriteEmptyExpense", func(t *testing.T) {
 		helpers.FailTestIfErr(t, db.dropDB(ctx))
-		err := db.WriteExpenses(ctx, &Expenses{Expense{}})
-		helpers.FailTestIfErr(t, err)
+		err := db.WriteExpenses(ctx, &Expenses{})
+		helpers.ExpectError(t, err)
 	})
 	t.Run("TestWriteNonEmptyExpense", func(t *testing.T) {
 		helpers.FailTestIfErr(t, db.dropDB(ctx))
-		err := db.WriteExpenses(ctx, &Expenses{*NewTestExpense(t)})
+		err := db.WriteExpenses(ctx, &Expenses{Classified: []*Expense{NewTestExpense(t)}})
 		helpers.FailTestIfErr(t, err)
 	})
 	t.Run("TestGetNonEmptyExpense", func(t *testing.T) {
 		helpers.FailTestIfErr(t, db.dropDB(ctx))
 		e := NewTestExpense(t)
-		err := db.WriteExpenses(ctx, &Expenses{*e})
+		err := db.WriteExpenses(ctx, &Expenses{Classified: []*Expense{e}})
 		helpers.FailTestIfErr(t, err)
 		exp, err := db.GetExpenses(ctx)
 		helpers.FailTestIfErr(t, err)
-		helpers.CheckEquals(t, exp, &Expenses{*e})
+		helpers.CheckEquals(t, exp, &Expenses{Classified: []*Expense{e}})
 	})
 	t.Run("TestWriteExpenses", func(t *testing.T) {
 		helpers.FailTestIfErr(t, db.dropDB(ctx))

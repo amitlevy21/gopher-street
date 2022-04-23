@@ -145,8 +145,6 @@ func parseTime(timeStr string, layout string) (time.Time, error) {
 }
 
 func parseCreditAndRefund(t *CardTransactions, record []string) (float64, float64, error) {
-	credit := 0.0
-	refund := 0.0
 	creditIndex := t.columnMapper.Credit
 	refundIndex := t.columnMapper.Refund
 	if creditIndex == refundIndex {
@@ -154,16 +152,10 @@ func parseCreditAndRefund(t *CardTransactions, record []string) (float64, float6
 	}
 	creditStr := record[creditIndex]
 	refundStr := record[refundIndex]
-	hasCredit := isValidField(creditStr, creditIndex)
-	hasRefund := isValidField(refundStr, refundIndex)
+	credit, hasCredit := isValidField(creditStr, creditIndex)
+	refund, hasRefund := isValidField(refundStr, refundIndex)
 	if hasCredit && hasRefund || !hasCredit && !hasRefund {
 		return 0, 0, errors.New("must define credit or refund but no both")
-	}
-	if hasCredit {
-		credit, _ = strconv.ParseFloat(creditStr, 64)
-	}
-	if hasRefund {
-		refund, _ = strconv.ParseFloat(refundStr, 64)
 	}
 	return credit, refund, nil
 }
@@ -173,18 +165,15 @@ func parseDescription(t *CardTransactions, record []string) string {
 	return record[descriptionIndex]
 }
 
-func isValidField(field string, index uint32) bool {
-	return field != "" && field != "NaN" && index > 0
+func isValidField(field string, index uint32) (float64, bool) {
+	val, err := strconv.ParseFloat(field, 64)
+	return val, index > 0 && err == nil
 }
 
 func (t *CardTransactions) parseBalance(record []string) float64 {
-	balance := 0.0
 	balanceIndex := t.columnMapper.Balance
 	balanceStr := record[balanceIndex]
-	hasBalance := isValidField(balanceStr, balanceIndex)
-	if hasBalance {
-		balance, _ = strconv.ParseFloat(record[balanceIndex], 64)
-	}
+	balance, _ := isValidField(balanceStr, balanceIndex)
 
 	return balance
 }

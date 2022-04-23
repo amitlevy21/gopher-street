@@ -17,14 +17,17 @@ func TestClass(t *testing.T) {
 		classifier      Classifier
 		transactionDesc string
 		expectedClass   string
+		expectError     bool
 	}{
 		{
-			desc: "EmptyClassWhenEmptyDescription",
+			desc:        "EmptyClassWhenEmptyDescription",
+			expectError: true,
 		},
 		{
 			desc:            "DescriptionAsClassIfNoMatch",
 			transactionDesc: "description",
 			expectedClass:   "description",
+			expectError:     true,
 		},
 		{
 			desc:            "ClassAccordingToDict",
@@ -41,8 +44,12 @@ func TestClass(t *testing.T) {
 	}
 	for _, tC := range testCases {
 		t.Run(tC.desc, func(t *testing.T) {
-			if class := tC.classifier.Class(tC.transactionDesc); class != tC.expectedClass {
+			class, error := tC.classifier.Class(tC.transactionDesc)
+			if class != tC.expectedClass {
 				t.Errorf("expected class %s received %s", tC.expectedClass, class)
+			}
+			if error != nil && !tC.expectError {
+				helpers.FailTestIfErr(t, error)
 			}
 		})
 	}

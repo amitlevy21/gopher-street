@@ -23,18 +23,18 @@ func TestReportTable(t *testing.T) {
 		},
 		{
 			desc: "Single row for single expense",
-			expenses: &Expenses{
+			expenses: &Expenses{Classified: []*Expense{
 				{
 					Date:   helpers.UTCDate(t, 2020, time.April, 24),
 					Amount: 53.6,
 					Class:  "Food Outside",
 					Tags:   []Tag{Crucial},
 				},
-			},
+			}, Unclassified: []*Expense{}},
 		},
 		{
 			desc: "Multiple rows with total for many expense",
-			expenses: &Expenses{
+			expenses: &Expenses{Classified: []*Expense{
 				{
 					Date:   helpers.UTCDate(t, 2020, time.April, 24),
 					Amount: 53.6,
@@ -59,7 +59,7 @@ func TestReportTable(t *testing.T) {
 					Class:  "Food Outside",
 					Tags:   []Tag{Crucial, Recurring},
 				},
-			},
+			}},
 		},
 	}
 	for _, tC := range testCases {

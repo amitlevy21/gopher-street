@@ -62,7 +62,7 @@ func loadFile(cmd *cobra.Command, args []string) {
 	writeErrCmd(cmd, err)
 	expenses := getExpenses(conf, args, cmd)
 	if len(expenses.ToSlice()) > 0 {
-		writeExpensesToDB(expenses, cmd)
+		writeExpensesToDB(conf, expenses, cmd)
 	}
 	writeCmd(cmd.OutOrStdout(), "\n")
 	writeReport(cmd, expenses)
@@ -75,10 +75,10 @@ func getExpenses(conf *ConfigData, args []string, cmd *cobra.Command) *Expenses 
 	return expenses
 }
 
-func writeExpensesToDB(expenses *Expenses, cmd *cobra.Command) {
+func writeExpensesToDB(conf *ConfigData, expenses *Expenses, cmd *cobra.Command) {
 	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
 	defer cancel()
-	db := Instance(ctx)
+	db := Instance(ctx, conf.Database.URI)
 	defer db.closeDB(ctx)
 	writeErrCmd(cmd, db.WriteExpenses(ctx, expenses))
 }
@@ -89,9 +89,11 @@ func writeReport(cmd *cobra.Command, expenses *Expenses) {
 }
 
 func getExpensesFromDB(cmd *cobra.Command, args []string) {
+	conf, err := GetConfigData()
+	writeErrCmd(cmd, err)
 	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
 	defer cancel()
-	db := Instance(ctx)
+	db := Instance(ctx, conf.Database.URI)
 	defer db.closeDB(ctx)
 	expenses, err := db.GetExpenses(ctx)
 	writeErrCmd(cmd, err)

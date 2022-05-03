@@ -22,3 +22,6 @@ classes:
 tags:
   Living:
     - Crucial
+
+database:
+  uri: mongodb://localhost

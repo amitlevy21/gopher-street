@@ -10,9 +10,10 @@ import (
 )
 
 type ConfigData struct {
-	Files   Files
-	Classes Classes
-	Tags    Tags
+	Files    Files
+	Classes  Classes
+	Tags     Tags
+	Database Database
 }
 
 type Files map[string]File
@@ -31,6 +32,10 @@ type Card struct {
 
 type Classes map[string][]string
 type Tags map[string][]string
+
+type Database struct {
+	URI string
+}
 
 func initConfig(path string) error {
 	viper.SetConfigFile(path)

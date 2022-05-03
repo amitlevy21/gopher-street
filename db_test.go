@@ -47,7 +47,7 @@ func TestBadURI(t *testing.T) {
 	defer func() { _ = recover() }()
 	ctx, cancel := context.WithCancel(context.Background())
 	defer cancel()
-	openDBWithURI(ctx, "")
+	openDB(ctx, "")
 	t.Errorf("did not panic")
 }
 
@@ -55,14 +55,14 @@ func TestBadPing(t *testing.T) {
 	defer func() { _ = recover() }()
 	ctx, cancel := context.WithTimeout(context.Background(), 1*time.Microsecond)
 	defer cancel()
-	openDBWithURI(ctx, "mongodb://hangup")
+	openDB(ctx, "mongodb://hangup")
 	t.Errorf("did not panic")
 }
 
 func TestClosedTooEarly(t *testing.T) {
 	defer func() { _ = recover() }()
 	ctx, cancel := context.WithCancel(context.Background())
-	db := Instance(ctx)
+	db := Instance(ctx, helpers.MongoURI)
 	cancel()
 	db.closeDB(ctx)
 	db.closeDB(ctx)
@@ -72,7 +72,7 @@ func TestClosedTooEarly(t *testing.T) {
 func TestBadDecodeCursor(t *testing.T) {
 	ctx, cancel := context.WithCancel(context.Background())
 	defer cancel()
-	db := Instance(ctx)
+	db := Instance(ctx, helpers.MongoURI)
 	defer db.closeDB(ctx)
 	c := &BadDecoderCursor{}
 	_, err := db.getExpensesFromCur(ctx, c)
@@ -82,7 +82,7 @@ func TestBadDecodeCursor(t *testing.T) {
 func TestBadEndDecodeCursor(t *testing.T) {
 	ctx, cancel := context.WithCancel(context.Background())
 	defer cancel()
-	db := Instance(ctx)
+	db := Instance(ctx, helpers.MongoURI)
 	defer db.closeDB(ctx)
 	c := &EndDecodeErrCursor{}
 	_, err := db.getExpensesFromCur(ctx, c)
@@ -92,7 +92,7 @@ func TestBadEndDecodeCursor(t *testing.T) {
 func TestCloseBadCursor(t *testing.T) {
 	ctx, cancel := context.WithCancel(context.Background())
 	defer cancel()
-	db := Instance(ctx)
+	db := Instance(ctx, helpers.MongoURI)
 	defer db.closeDB(ctx)
 	c := &BadDecoderCursor{}
 	db.closeCursor(ctx, c)
@@ -101,7 +101,7 @@ func TestCloseBadCursor(t *testing.T) {
 func TestErrWhileGetting(t *testing.T) {
 	ctx, cancel := context.WithCancel(context.Background())
 	defer cancel()
-	db := Instance(ctx)
+	db := Instance(ctx, helpers.MongoURI)
 	defer db.closeDB(ctx)
 
 	ctx2, cancel := context.WithCancel(context.Background())
@@ -115,7 +115,7 @@ func TestDB(t *testing.T) {
 	ctx, cancel := context.WithCancel(context.Background())
 	defer cancel()
 
-	db := Instance(ctx)
+	db := Instance(ctx, helpers.MongoURI)
 	defer db.closeDB(ctx)
 	t.Run("TestGetEmptyExpenses", func(t *testing.T) {
 		helpers.FailTestIfErr(t, db.dropDB(ctx))

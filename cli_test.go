@@ -67,7 +67,7 @@ func TestLoadCmd(t *testing.T) {
 func TestGetEmptyExpenses(t *testing.T) {
 	ctx, cancel := context.WithCancel(context.Background())
 	defer cancel()
-	db := Instance(ctx)
+	db := Instance(ctx, helpers.MongoURI)
 	helpers.FailTestIfErr(t, db.dropDB(ctx))
 	err := CLIInit(filepath.Join(fixtures, "configs", "config.yml"))
 	helpers.FailTestIfErr(t, err)
@@ -81,7 +81,7 @@ func TestGetEmptyExpenses(t *testing.T) {
 func TestGetExpenses(t *testing.T) {
 	ctx, cancel := context.WithCancel(context.Background())
 	defer cancel()
-	db := Instance(ctx)
+	db := Instance(ctx, helpers.MongoURI)
 	defer helpers.FailTestIfErr(t, db.dropDB(ctx))
 	helpers.FailTestIfErr(t, db.dropDB(ctx))
 	err := CLIInit(filepath.Join(fixtures, "configs", "config.yml"))

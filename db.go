@@ -32,24 +32,19 @@ type cursor interface {
 
 var instance *DB
 
-func Instance(ctx context.Context) *DB {
+func Instance(ctx context.Context, mongoURI string) *DB {
 	if instance == nil {
 		lock.Lock()
 		defer lock.Unlock()
 		if instance == nil {
-			client := openDB(ctx)
+			client := openDB(ctx, mongoURI)
 			instance = &DB{connection{client, ctx}, client.Database("user")}
 		}
 	}
 	return instance
 }
 
-func openDB(ctx context.Context) *mongo.Client {
-	uri := "mongodb://localhost"
-	return openDBWithURI(ctx, uri)
-}
-
-func openDBWithURI(ctx context.Context, uri string) *mongo.Client {
+func openDB(ctx context.Context, uri string) *mongo.Client {
 	client, err := mongo.Connect(ctx, options.Client().ApplyURI(uri))
 	if err != nil {
 		panic(err)

@@ -22,6 +22,7 @@ import (
 type BadWriter struct{}
 
 var Fixtures = filepath.Join("test", "fixtures")
+var MongoURI = "mongodb://localhost"
 var update = flag.Bool("update", false, "update .golden files")
 
 func OpenFixture(t *testing.T, fixtureFileName string) *os.File {

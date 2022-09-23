@@ -25,7 +25,7 @@ type Transaction struct {
 type CardTransactions struct {
 	data         [][]string
 	columnMapper *ColMapper
-	rowSubsetter *RowSubsetter
+	rowSubSetter *RowSubSetter
 	dateLayout   string
 }
 
@@ -37,16 +37,16 @@ type ColMapper struct {
 	Balance     uint32 `mapstructure:",omitempty"`
 }
 
-type RowSubsetter struct {
+type RowSubSetter struct {
 	Start uint32
 	End   uint32
 }
 
-func NewCardTransactions(data [][]string, columnMapper *ColMapper, rowSubsetter *RowSubsetter, dateLayout string) *CardTransactions {
+func NewCardTransactions(data [][]string, columnMapper *ColMapper, rowSubSetter *RowSubSetter, dateLayout string) *CardTransactions {
 	return &CardTransactions{
 		data,
 		columnMapper,
-		rowSubsetter,
+		rowSubSetter,
 		dateLayout,
 	}
 }
@@ -72,20 +72,20 @@ func (t *CardTransactions) records() ([][]string, error) {
 	if err := t.checkDims(); err != nil {
 		return [][]string{}, err
 	}
-	if t.rowSubsetter.Start == t.rowSubsetter.End {
+	if t.rowSubSetter.Start == t.rowSubSetter.End {
 		return t.data, nil
 	}
 
-	return t.data[t.rowSubsetter.Start:t.rowSubsetter.End], nil
+	return t.data[t.rowSubSetter.Start:t.rowSubSetter.End], nil
 }
 
 func (t *CardTransactions) checkDims() error {
 	rows := len(t.data)
-	if err := t.validateRowSubsetter(uint32(rows)); err != nil {
+	if err := t.validateRowSubSetter(uint32(rows)); err != nil {
 		return err
 	}
 	if rows > 0 {
-		cols := len(t.data[t.rowSubsetter.Start])
+		cols := len(t.data[t.rowSubSetter.Start])
 		if err := t.validateColumnMapper(uint32(cols)); err != nil {
 			return err
 		}
@@ -93,13 +93,13 @@ func (t *CardTransactions) checkDims() error {
 	return nil
 }
 
-func (t *CardTransactions) validateRowSubsetter(rows uint32) error {
-	if t.rowSubsetter.Start == t.rowSubsetter.End {
+func (t *CardTransactions) validateRowSubSetter(rows uint32) error {
+	if t.rowSubSetter.Start == t.rowSubSetter.End {
 		return nil
 	}
 
-	if t.rowSubsetter.End > rows {
-		return errors.New("RowSubsetter indices out of range")
+	if t.rowSubSetter.End > rows {
+		return errors.New("RowSubSetter indices out of range")
 	}
 	return nil
 }

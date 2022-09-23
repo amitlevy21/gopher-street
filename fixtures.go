@@ -23,7 +23,7 @@ func NewTestConfig() *ConfigData {
 			"multiple-rows": {
 				Cards: map[string]Card{
 					"card1": {
-						RowSubsetter: &RowSubsetter{
+						RowSubSetter: &RowSubSetter{
 							Start: 1,
 							End:   4,
 						},
@@ -94,7 +94,7 @@ func NewTestCardTransactions(t *testing.T, fileName string) *CardTransactions {
 		Balance:     6,
 	}
 	layout := "02.01.2006"
-	return NewCardTransactions(data, mapper, &RowSubsetter{}, layout)
+	return NewCardTransactions(data, mapper, &RowSubSetter{}, layout)
 }
 
 func NewTestClassifier() *Classifier {

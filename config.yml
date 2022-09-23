@@ -2,7 +2,7 @@ files:
   Export_2_2022:
     cards:
       card1:
-        rowSubsetter:
+        rowSubSetter:
           start: 10
           end: 31
         colMapper:

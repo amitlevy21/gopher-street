@@ -2,7 +2,7 @@ files:
   test:
     cards:
       card1:
-        rowSubsetter:
+        rowSubSetter:
           start: 13
           end: 59
         colMapper:

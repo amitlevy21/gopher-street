@@ -20,12 +20,12 @@ var mapper = &ColMapper{
 	Refund:      5,
 	Balance:     6,
 }
-var emptySubsetter = &RowSubsetter{}
+var emptySubSetter = &RowSubSetter{}
 
 var layout = "02.01.2006"
 
 func TestEmptyTransactionFromEmptyCSV(t *testing.T) {
-	c := NewCardTransactions([][]string{}, mapper, emptySubsetter, layout)
+	c := NewCardTransactions([][]string{}, mapper, emptySubSetter, layout)
 	transactions, _ := c.Transactions()
 	if l := len(transactions); l > 0 {
 		t.Errorf("expected 0 transactions got %d", l)
@@ -34,7 +34,7 @@ func TestEmptyTransactionFromEmptyCSV(t *testing.T) {
 
 func TestSkipsBadDateRecord(t *testing.T) {
 	badCSV := helpers.ReadCSVFixture(t, filepath.Join(CSVTransactionsPath, "bad-date.csv"))
-	c := NewCardTransactions(badCSV, mapper, emptySubsetter, layout)
+	c := NewCardTransactions(badCSV, mapper, emptySubSetter, layout)
 	transactions, err := c.Transactions()
 	helpers.FailTestIfErr(t, err)
 	if l := len(transactions); l != 0 {
@@ -44,7 +44,7 @@ func TestSkipsBadDateRecord(t *testing.T) {
 
 func TestSkipsBadRecords(t *testing.T) {
 	badCSV := helpers.ReadCSVFixture(t, filepath.Join(CSVTransactionsPath, "bad-multi.csv"))
-	c := NewCardTransactions(badCSV, mapper, emptySubsetter, layout)
+	c := NewCardTransactions(badCSV, mapper, emptySubSetter, layout)
 	transactions, err := c.Transactions()
 	helpers.FailTestIfErr(t, err)
 	if l := len(transactions); l != 2 {
@@ -59,7 +59,7 @@ func TestSkipsBadRecords(t *testing.T) {
 
 func TestSingleTransactionFromSingleRowCSV(t *testing.T) {
 	data := helpers.ReadCSVFixture(t, filepath.Join(CSVTransactionsPath, "single-row.csv"))
-	c := NewCardTransactions(data, mapper, emptySubsetter, layout)
+	c := NewCardTransactions(data, mapper, emptySubSetter, layout)
 	transactions, err := c.Transactions()
 	helpers.FailTestIfErr(t, err)
 	if l := len(transactions); l != 1 {
@@ -78,7 +78,7 @@ func TestMapsColumnsByGivenIndices(t *testing.T) {
 		Refund:      5,
 		Balance:     6,
 	}
-	c := NewCardTransactions(data, customMapper, emptySubsetter, layout)
+	c := NewCardTransactions(data, customMapper, emptySubSetter, layout)
 	transactions, err := c.Transactions()
 	helpers.FailTestIfErr(t, err)
 	if l := len(transactions); l != 1 {
@@ -93,14 +93,14 @@ func TestMapsColumnsByGivenIndices(t *testing.T) {
 func TestMapperOutOfRange(t *testing.T) {
 	data := helpers.ReadCSVFixture(t, filepath.Join(CSVTransactionsPath, "single-row.csv"))
 	customMapper := &ColMapper{Date: 23, Credit: 2}
-	c := NewCardTransactions(data, customMapper, emptySubsetter, layout)
+	c := NewCardTransactions(data, customMapper, emptySubSetter, layout)
 	_, err := c.Transactions()
 	helpers.ExpectError(t, err)
 }
 
 func TestRefundTransaction(t *testing.T) {
 	data := helpers.ReadCSVFixture(t, filepath.Join(CSVTransactionsPath, "with-refund.csv"))
-	c := NewCardTransactions(data, mapper, emptySubsetter, layout)
+	c := NewCardTransactions(data, mapper, emptySubSetter, layout)
 	trans, err := c.Transactions()
 	helpers.FailTestIfErr(t, err)
 	if trans[0].Refund != 5.0 {
@@ -111,7 +111,7 @@ func TestRefundTransaction(t *testing.T) {
 func TestMapperMissingCreditAndRefund(t *testing.T) {
 	data := helpers.ReadCSVFixture(t, filepath.Join(CSVTransactionsPath, "single-row.csv"))
 	customMapper := &ColMapper{Date: 0}
-	c := NewCardTransactions(data, customMapper, emptySubsetter, layout)
+	c := NewCardTransactions(data, customMapper, emptySubSetter, layout)
 	trans, err := c.Transactions()
 	helpers.FailTestIfErr(t, err)
 	if l := len(trans); l != 0 {
@@ -121,7 +121,7 @@ func TestMapperMissingCreditAndRefund(t *testing.T) {
 
 func TestEmptySubsetterShouldReadAll(t *testing.T) {
 	data := helpers.ReadCSVFixture(t, filepath.Join(CSVTransactionsPath, "multiple-rows.csv"))
-	c := NewCardTransactions(data, mapper, emptySubsetter, layout)
+	c := NewCardTransactions(data, mapper, emptySubSetter, layout)
 	transactions, err := c.Transactions()
 	helpers.FailTestIfErr(t, err)
 	if l := len(transactions); l != 4 {
@@ -131,7 +131,7 @@ func TestEmptySubsetterShouldReadAll(t *testing.T) {
 
 func TestOutOfUpperBoundRangeSubsetter(t *testing.T) {
 	data := helpers.ReadCSVFixture(t, filepath.Join(CSVTransactionsPath, "multiple-rows.csv"))
-	subsetter := &RowSubsetter{1, 5}
+	subsetter := &RowSubSetter{1, 5}
 	c := NewCardTransactions(data, mapper, subsetter, layout)
 	_, err := c.Transactions()
 	helpers.ExpectError(t, err)
@@ -139,7 +139,7 @@ func TestOutOfUpperBoundRangeSubsetter(t *testing.T) {
 
 func TestSubsetsRowsByGivenIndices(t *testing.T) {
 	data := helpers.ReadCSVFixture(t, filepath.Join(CSVTransactionsPath, "multiple-rows.csv"))
-	subsetter := &RowSubsetter{1, 3}
+	subsetter := &RowSubSetter{1, 3}
 	c := NewCardTransactions(data, mapper, subsetter, layout)
 	transactions, err := c.Transactions()
 	helpers.FailTestIfErr(t, err)
@@ -156,7 +156,7 @@ func TestSubsetsRowsByGivenIndices(t *testing.T) {
 
 func TestTransactionsFromCSV(t *testing.T) {
 	data := helpers.ReadCSVFixture(t, filepath.Join(CSVTransactionsPath, "multiple-rows.csv"))
-	c := NewCardTransactions(data, mapper, emptySubsetter, layout)
+	c := NewCardTransactions(data, mapper, emptySubSetter, layout)
 	transactions, err := c.Transactions()
 	helpers.FailTestIfErr(t, err)
 	if l := len(transactions); l != 4 {

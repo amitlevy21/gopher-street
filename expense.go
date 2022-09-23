@@ -72,7 +72,7 @@ func getExpensesFromFile(conf *ConfigData, transactionFilePath string) (*Expense
 		return expenses, fmt.Errorf("no configuration found for transaction file: %s", noExt)
 	}
 	for _, card := range transactionFileConfig.Cards {
-		cardTrans := NewCardTransactions(data, card.ColMapper, card.RowSubsetter, card.DateLayout)
+		cardTrans := NewCardTransactions(data, card.ColMapper, card.RowSubSetter, card.DateLayout)
 		trans, err := cardTrans.Transactions()
 		if err != nil {
 			return expenses, err

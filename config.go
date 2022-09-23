@@ -25,7 +25,7 @@ type File struct {
 type FileCards map[string]Card
 
 type Card struct {
-	RowSubsetter *RowSubsetter
+	RowSubSetter *RowSubSetter
 	ColMapper    *ColMapper
 	DateLayout   string
 }

@@ -9,7 +9,6 @@ import (
 	"encoding/csv"
 	"flag"
 	"fmt"
-	"io/ioutil"
 	"os"
 	"path/filepath"
 	"strings"
@@ -59,7 +58,7 @@ func UTCDate(t *testing.T, year int, month time.Month, day int) time.Time {
 	return time.Date(year, month, day, 0, 0, 0, 0, timeZone)
 }
 
-func CheckEquals(t *testing.T, actual interface{}, expected interface{}) {
+func ExpectEquals(t *testing.T, actual interface{}, expected interface{}) {
 	if !cmp.Equal(actual, expected) {
 		t.Errorf("expected %v, received %v\nDiff: %s", expected, actual, cmp.Diff(actual, expected))
 	}
@@ -92,7 +91,7 @@ func CheckUpdateFlag(t *testing.T, fixture string, actual string) {
 
 func ExpectEqualsGolden(t *testing.T, fixture string, actual string) {
 	gp := getGoldenPath(t, fixture)
-	g, err := ioutil.ReadFile(gp)
+	g, err := os.ReadFile(gp)
 	if err != nil {
 		t.Fatalf("failed reading .golden: %s", err)
 	}
@@ -108,7 +107,7 @@ func getGoldenPath(t *testing.T, fixture string) string {
 
 func updateGoldenFile(t *testing.T, goldenPath string, actual string) {
 	t.Log("updating golden file")
-	if err := ioutil.WriteFile(goldenPath, []byte(actual), 0644); err != nil {
+	if err := os.WriteFile(goldenPath, []byte(actual), 0644); err != nil {
 		t.Fatalf("failed to update golden file: %s", err)
 	}
 }

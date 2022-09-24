@@ -53,8 +53,8 @@ func TestSkipsBadRecords(t *testing.T) {
 	expected := NewTestTransaction(t, "pizza1")
 	expected2 := NewTestTransaction(t, "pizza3")
 	expected2.Balance = 0
-	helpers.CheckEquals(t, &transactions[0], expected)
-	helpers.CheckEquals(t, &transactions[1], expected2)
+	helpers.ExpectEquals(t, &transactions[0], expected)
+	helpers.ExpectEquals(t, &transactions[1], expected2)
 }
 
 func TestSingleTransactionFromSingleRowCSV(t *testing.T) {
@@ -66,7 +66,7 @@ func TestSingleTransactionFromSingleRowCSV(t *testing.T) {
 		t.Fatalf("expected 1 transactions got %d", l)
 	}
 	expected := NewTestTransaction(t, "pizza")
-	helpers.CheckEquals(t, &transactions[0], expected)
+	helpers.ExpectEquals(t, &transactions[0], expected)
 }
 
 func TestMapsColumnsByGivenIndices(t *testing.T) {
@@ -119,7 +119,7 @@ func TestMapperMissingCreditAndRefund(t *testing.T) {
 	}
 }
 
-func TestEmptySubsetterShouldReadAll(t *testing.T) {
+func TestEmptySubSetterShouldReadAll(t *testing.T) {
 	data := helpers.ReadCSVFixture(t, filepath.Join(CSVTransactionsPath, "multiple-rows.csv"))
 	c := NewCardTransactions(data, mapper, emptySubSetter, layout)
 	transactions, err := c.Transactions()
@@ -129,28 +129,28 @@ func TestEmptySubsetterShouldReadAll(t *testing.T) {
 	}
 }
 
-func TestOutOfUpperBoundRangeSubsetter(t *testing.T) {
+func TestOutOfUpperBoundRangeSubSetter(t *testing.T) {
 	data := helpers.ReadCSVFixture(t, filepath.Join(CSVTransactionsPath, "multiple-rows.csv"))
-	subsetter := &RowSubSetter{1, 5}
-	c := NewCardTransactions(data, mapper, subsetter, layout)
+	subSetter := &RowSubSetter{1, 5}
+	c := NewCardTransactions(data, mapper, subSetter, layout)
 	_, err := c.Transactions()
 	helpers.ExpectError(t, err)
 }
 
 func TestSubsetsRowsByGivenIndices(t *testing.T) {
 	data := helpers.ReadCSVFixture(t, filepath.Join(CSVTransactionsPath, "multiple-rows.csv"))
-	subsetter := &RowSubSetter{1, 3}
-	c := NewCardTransactions(data, mapper, subsetter, layout)
+	subSetter := &RowSubSetter{1, 3}
+	c := NewCardTransactions(data, mapper, subSetter, layout)
 	transactions, err := c.Transactions()
 	helpers.FailTestIfErr(t, err)
-	expected := int(subsetter.End) - int(subsetter.Start)
+	expected := int(subSetter.End) - int(subSetter.Start)
 	if len(transactions) != expected {
 		t.Errorf("expected %d but got %d", expected, len(transactions))
 	}
-	for i, j := subsetter.Start, 0; i < subsetter.End; i, j = i+1, j+1 {
+	for i, j := subSetter.Start, 0; i < subSetter.End; i, j = i+1, j+1 {
 		description := fmt.Sprintf("pizza%d", i)
 		expected := NewTestTransaction(t, description)
-		helpers.CheckEquals(t, &transactions[j], expected)
+		helpers.ExpectEquals(t, &transactions[j], expected)
 	}
 }
 
@@ -165,6 +165,6 @@ func TestTransactionsFromCSV(t *testing.T) {
 	for i := 0; i < len(transactions); i++ {
 		description := fmt.Sprintf("pizza%d", i)
 		expected := NewTestTransaction(t, description)
-		helpers.CheckEquals(t, &transactions[i], expected)
+		helpers.ExpectEquals(t, &transactions[i], expected)
 	}
 }

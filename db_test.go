@@ -108,7 +108,7 @@ func TestErrWhileGetting(t *testing.T) {
 	cancel()
 	exp, err := db.GetExpenses(ctx2)
 	helpers.ExpectError(t, err)
-	helpers.CheckEquals(t, &Expenses{}, exp)
+	helpers.ExpectEquals(t, &Expenses{}, exp)
 }
 
 func TestDB(t *testing.T) {
@@ -121,7 +121,7 @@ func TestDB(t *testing.T) {
 		helpers.FailTestIfErr(t, db.dropDB(ctx))
 		expenses, err := db.GetExpenses(ctx)
 		helpers.FailTestIfErr(t, err)
-		helpers.CheckEquals(t, expenses, &Expenses{})
+		helpers.ExpectEquals(t, expenses, &Expenses{})
 	})
 	t.Run("TestWriteEmptyExpense", func(t *testing.T) {
 		helpers.FailTestIfErr(t, db.dropDB(ctx))
@@ -140,7 +140,7 @@ func TestDB(t *testing.T) {
 		helpers.FailTestIfErr(t, err)
 		exp, err := db.GetExpenses(ctx)
 		helpers.FailTestIfErr(t, err)
-		helpers.CheckEquals(t, exp, &Expenses{Classified: []*Expense{e}})
+		helpers.ExpectEquals(t, exp, &Expenses{Classified: []*Expense{e}})
 	})
 	t.Run("TestWriteExpenses", func(t *testing.T) {
 		helpers.FailTestIfErr(t, db.dropDB(ctx))
@@ -154,6 +154,6 @@ func TestDB(t *testing.T) {
 		helpers.FailTestIfErr(t, err)
 		res, err := db.GetExpenses(ctx)
 		helpers.FailTestIfErr(t, err)
-		helpers.CheckEquals(t, res, exps)
+		helpers.ExpectEquals(t, res, exps)
 	})
 }

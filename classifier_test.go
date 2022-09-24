@@ -65,5 +65,5 @@ func TestNewClassifier(t *testing.T) {
 		"for rent": "Living",
 	}
 	cl := NewClassifier(classesToDescriptions)
-	helpers.CheckEquals(t, cl.descriptionToClass, descriptionToClasses)
+	helpers.ExpectEquals(t, cl.descriptionToClass, descriptionToClasses)
 }

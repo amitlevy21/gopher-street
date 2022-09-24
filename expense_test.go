@@ -74,7 +74,7 @@ func TestExpenseCreation(t *testing.T) {
 			}, Unclassified: []*Expense{}},
 		},
 		{
-			desc:         "From matching tags and classses -> all expenses. Class set by classifier, if tags match they should show",
+			desc:         "From matching tags and classes -> all expenses. Class set by classifier, if tags match they should show",
 			transactions: []Transaction{*NewTestTransaction(t, "description1")},
 			classifier:   NewTestClassifier(),
 			tagger:       NewTestTagger(),
@@ -89,7 +89,7 @@ func TestExpenseCreation(t *testing.T) {
 	for _, tC := range testCases {
 		t.Run(tC.desc, func(t *testing.T) {
 			expense := NewExpenses(tC.transactions, tC.classifier, tC.tagger)
-			helpers.CheckEquals(t, expense, tC.expected)
+			helpers.ExpectEquals(t, expense, tC.expected)
 		})
 	}
 }
@@ -104,7 +104,7 @@ func TestGetExpensesNonExist(t *testing.T) {
 	helpers.ExpectError(t, err)
 }
 
-func TestGetExpensesFileDontAppearInConfig(t *testing.T) {
+func TestGetExpensesFileDoNotAppearInConfig(t *testing.T) {
 	file := filepath.Join(CSVTransactionsPath, "with-refund.csv")
 	_, err := getExpensesFromFile(NewTestConfig(), file)
 	helpers.ExpectError(t, err)
@@ -114,7 +114,7 @@ func TestGetExpensesFromFile(t *testing.T) {
 	file := filepath.Join(CSVTransactionsPath, "multiple-rows.csv")
 	exps, err := getExpensesFromFile(NewTestConfig(), file)
 	helpers.FailTestIfErr(t, err)
-	helpers.CheckEquals(t, exps.ToSlice(), []*Expense{
+	helpers.ExpectEquals(t, exps.ToSlice(), []*Expense{
 		{
 			Date:   helpers.UTCDate(t, 2021, time.March, 18),
 			Amount: 5.0,
@@ -144,7 +144,7 @@ func TestGroupByDate(t *testing.T) {
 	helpers.FailTestIfErr(t, err)
 	expense := NewExpenses(trs, cl, tagger)
 	byMonth := expense.GroupByMonth()
-	helpers.CheckEquals(t, byMonth, map[time.Month][]Expense{
+	helpers.ExpectEquals(t, byMonth, map[time.Month][]Expense{
 		time.March: {
 			{
 				Date:   helpers.UTCDate(t, 2021, time.March, 18),
@@ -186,7 +186,7 @@ func TestGroupByClass(t *testing.T) {
 	helpers.FailTestIfErr(t, err)
 	expense := NewExpenses(trs, cl, tagger)
 	byMonth := expense.GroupByClass()
-	helpers.CheckEquals(t, byMonth, map[string][]Expense{
+	helpers.ExpectEquals(t, byMonth, map[string][]Expense{
 		"Eating outside": {
 			{
 				Date:   helpers.UTCDate(t, 2021, time.March, 18),
@@ -228,7 +228,7 @@ func TestGroupByTag(t *testing.T) {
 	helpers.FailTestIfErr(t, err)
 	expense := NewExpenses(trs, cl, tagger)
 	byMonth := expense.GroupByTag()
-	helpers.CheckEquals(t, byMonth, map[Tag][]Expense{
+	helpers.ExpectEquals(t, byMonth, map[Tag][]Expense{
 		"Crucial": {
 			{
 				Date:   helpers.UTCDate(t, 2021, time.April, 24),

@@ -43,7 +43,7 @@ func TestTag(t *testing.T) {
 	for _, tC := range testCases {
 		t.Run(tC.desc, func(t *testing.T) {
 			tags := tC.tagger.Tags(tC.class)
-			helpers.CheckEquals(t, tags, tC.expectedTags)
+			helpers.ExpectEquals(t, tags, tC.expectedTags)
 		})
 	}
 }

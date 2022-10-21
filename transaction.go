@@ -109,7 +109,7 @@ func (t *CardTransactions) validateColumnMapper(cols uint32) error {
 		}
 	}
 	if len(invalid) > 0 {
-		err := fmt.Sprintf("invalid column mapper. invalid values: %v", invalid)
+		err := fmt.Sprintf("invalid column mapper. invalid values: %v higher than max %v", invalid, cols)
 		log.Print(err)
 		return errors.New(err)
 	}

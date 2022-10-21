@@ -79,7 +79,9 @@ func writeExpensesToDB(conf *ConfigData, expenses *Expenses, cmd *cobra.Command)
 }
 
 func writeReport(cmd *cobra.Command, expenses *Expenses) {
-	r := Reporter{}
+	conf, err := GetConfigData()
+	writeErrCmd(cmd, err)
+	r := Reporter{conf.Report}
 	writeCmd(cmd.OutOrStdout(), r.Report(expenses))
 }
 

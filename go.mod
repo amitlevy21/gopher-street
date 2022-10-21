@@ -4,7 +4,7 @@ go 1.17
 
 require (
 	github.com/google/go-cmp v0.5.9
-	github.com/jedib0t/go-pretty/v6 v6.3.8
+	github.com/jedib0t/go-pretty/v6 v6.4.0
 	github.com/spf13/cobra v1.5.0
 	github.com/spf13/viper v1.13.0
 	github.com/tealeg/xlsx v1.0.5

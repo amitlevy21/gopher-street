@@ -4,13 +4,15 @@ import (
 	"strings"
 
 	"github.com/jedib0t/go-pretty/v6/table"
+	"github.com/jedib0t/go-pretty/v6/text"
 )
 
 type Reporter struct {
+	reportConf ReportConf
 }
 
 func (r *Reporter) Report(expenses *Expenses) string {
-	return makeReportTable(expenses)
+	return r.makeReportTable(expenses)
 }
 
 func totalAmount(expenses []*Expense) float64 {
@@ -21,27 +23,39 @@ func totalAmount(expenses []*Expense) float64 {
 	return total
 }
 
-func makeReportTable(expenses *Expenses) string {
+func (r *Reporter) makeReportTable(expenses *Expenses) string {
 	report := strings.Builder{}
 	report.WriteString("Total report\n")
-	report.WriteString(makeMainTable(expenses.ToSlice()))
+	report.WriteString(r.makeMainTable(expenses.Classified))
 	if len(expenses.Unclassified) > 0 {
 		report.WriteString("There were unclassified expenses, consider adding their classes to the classifier\n")
-		unclassifiedReport := makeMainTable(expenses.Unclassified)
+		unclassifiedReport := r.makeMainTable(expenses.Unclassified)
 		report.WriteString(unclassifiedReport)
 	}
 
 	return report.String()
 }
 
-func makeMainTable(expenses []*Expense) string {
+func (r *Reporter) makeMainTable(expenses []*Expense) string {
 	t := table.NewWriter()
-	t.AppendHeader(table.Row{"#", "Date", "Amount", "Class", "Tags"})
+	if r.reportConf.RightToLeftLanguage {
+		t.Style().Format.Direction = text.LeftToRight
+	}
+	header := r.getHeader()
+	t.AppendHeader(header)
 	appendTableBody(expenses, t)
 	t.AppendSeparator()
 	total := totalAmount(expenses)
 	t.AppendFooter(table.Row{"", "Total", total})
 	return t.Render() + "\n"
+}
+
+func (r *Reporter) getHeader() table.Row {
+	customHeaders := r.reportConf.Headers
+	if customHeaders != nil {
+		return table.Row{"#", customHeaders.Date, customHeaders.Amount, customHeaders.Class, customHeaders.Tags}
+	}
+	return table.Row{"#", "Date", "Amount", "Class", "Tags"}
 }
 
 func appendTableBody(expenses []*Expense, t table.Writer) {

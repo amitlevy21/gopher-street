@@ -9,6 +9,7 @@ type ConfigData struct {
 	Classes  Classes
 	Tags     Tags
 	Database Database
+	Report   ReportConf
 }
 
 type Files map[string]File
@@ -30,6 +31,16 @@ type Tags map[string][]string
 
 type Database struct {
 	URI string
+}
+
+type ReportConf struct {
+	RightToLeftLanguage bool
+	Headers             *struct {
+		Date   string
+		Amount string
+		Class  string
+		Tags   string
+	}
 }
 
 func initConfig(path string) error {
